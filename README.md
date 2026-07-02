@@ -24,7 +24,7 @@ Live at **[zesa.tapiwa.me](https://zesa.tapiwa.me)**
 
 ## Stack
 
-Next.js 15 (App Router, static export) · TypeScript · Tailwind CSS v4
+Next.js 16 (App Router, static export) · TypeScript · Tailwind CSS v4
 
 ```bash
 npm install
