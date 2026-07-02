@@ -16,6 +16,24 @@ const CURRENCIES = {
   ZWG: { id: process.env.PAYNOW_ID_ZWG, key: process.env.PAYNOW_KEY_ZWG },
 };
 
+/* ---------------- Service fee ----------------
+   Kept in sync with src/lib/fee.ts (frontend copy — the function bundle
+   can't import TS). Fee is taken OUT of the gross amount the customer pays. */
+
+const DEFAULT_FEE_PCT = 10;
+
+// Default 10 when unset/invalid; 0 is valid (fee disabled).
+function parseFeePct(raw) {
+  if (raw === undefined || raw === null || raw === "") return DEFAULT_FEE_PCT;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0) return DEFAULT_FEE_PCT;
+  return n;
+}
+
+function tokenValueForGross(gross, feePct) {
+  return Math.round((gross / (1 + feePct / 100)) * 100) / 100;
+}
+
 function isConfigured() {
   return Boolean(
     process.env.HR_ACCESS_CODE &&
@@ -117,8 +135,18 @@ async function paynowInitiate({ ref, amount, currency, email }) {
 }
 
 async function paynowPoll(pollUrl) {
-  const res = await fetch(pollUrl, { method: "POST" });
-  return parseUrlEncoded(await res.text());
+  // Transient "TypeError: fetch failed" here used to 500 /status — retry briefly.
+  let lastErr;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 300 * attempt));
+    try {
+      const res = await fetch(pollUrl, { method: "POST" });
+      return parseUrlEncoded(await res.text());
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr;
 }
 
 /* ---------------- Helpers ---------------- */
@@ -204,13 +232,17 @@ async function finalizeVend(db, tx, vr, json, error) {
     await releaseLock(db, tx.ref);
     return json({ ok: true, status: "processing" });
   }
+  // Hot Recharge errors don't always populate ReplyMsg — fall back to Message,
+  // then the raw reply, so we never log "undefined".
+  const replyMsg = vr.ReplyMsg || vr.Message || JSON.stringify(vr);
+  const replyDetail = `code=${vr.ReplyCode ?? "?"} ${replyMsg}`;
   await db.updateRow(DB_ID, TABLE, tx.$id, {
     status: "vend_failed",
-    lastError: String(vr.ReplyMsg || "vend error").slice(0, 1000),
+    lastError: String(replyDetail || "vend error").slice(0, 1000),
   });
   await releaseLock(db, tx.ref);
-  error(`vend failed ref=${tx.ref}: ${vr.ReplyMsg}`);
-  await alert(`VEND FAILED ref=${tx.ref} meter=${tx.meter} ${tx.currency} ${tx.amount}: ${vr.ReplyMsg}`);
+  error(`vend failed ref=${tx.ref}: ${replyDetail}`);
+  await alert(`VEND FAILED ref=${tx.ref} meter=${tx.meter} ${tx.currency} ${tx.amount}: ${replyDetail}`);
   return json({ ok: true, status: "vend_failed", meter: tx.meter });
 }
 
@@ -224,8 +256,10 @@ async function attemptVend(db, tx, json, log, error) {
   await db.updateRow(DB_ID, TABLE, tx.$id, { status: "paid_vending", hrRef: agentRef });
   let vr;
   try {
-    const vendAmount = await toVendAmount(tx.amount, tx.currency, log);
-    log(`vend ref=${tx.ref} paid=${tx.currency} ${tx.amount} vendAmount=${vendAmount}`);
+    // Vend the token value (gross minus service fee); older rows have no tokenValue.
+    const tokenValue = Number(tx.tokenValue) > 0 ? Number(tx.tokenValue) : tx.amount;
+    const vendAmount = await toVendAmount(tokenValue, tx.currency, log);
+    log(`vend ref=${tx.ref} paid=${tx.currency} ${tx.amount} tokenValue=${tokenValue} vendAmount=${vendAmount}`);
     vr = await hrVend(vendAmount, tx.meter, tx.phone, agentRef);
   } catch (e) {
     // Network/timeout mid-vend: leave lock (it goes stale in 2 min) so a later
@@ -259,7 +293,7 @@ export default async ({ req, res, log, error }) => {
   try {
     /* ---- health / config check ---- */
     if (path === "/health") {
-      return json({ ok: true, configured: isConfigured() });
+      return json({ ok: true, configured: isConfigured(), feePct: parseFeePct(process.env.SERVICE_FEE_PCT) });
     }
 
     /* ---- admin: wallet balances (requires ADMIN_KEY) ---- */
@@ -308,9 +342,13 @@ export default async ({ req, res, log, error }) => {
       if (!normPhone) return json({ ok: false, error: "Enter a valid Zimbabwe mobile (07… or +2637…)." }, 400);
 
       const ref = makeRef();
+      // Customer pays the gross amount; the service fee is taken out of it and
+      // only the remaining token value is vended.
+      const feePct = parseFeePct(process.env.SERVICE_FEE_PCT);
+      const tokenValue = tokenValueForGross(amt, feePct);
       const pay = await paynowInitiate({ ref, amount: amt, currency, email });
       await db.createRow(DB_ID, TABLE, ID.unique(), {
-        ref, meter, amount: amt, currency,
+        ref, meter, amount: amt, currency, feePct, tokenValue,
         phone: normPhone, email: email || "", customerName: customerName || "",
         status: "pending", pollUrl: pay.pollUrl,
       });
