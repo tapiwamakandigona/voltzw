@@ -26,9 +26,29 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
   });
-  const data = (await res.json()) as T & { error?: string };
-  if (!res.ok) throw new Error(data?.error || "Something went wrong. Please try again.");
+  // A gateway error can return an HTML body — never surface a raw
+  // SyntaxError to the customer, fall back to a friendly message.
+  let data: (T & { error?: string }) | null = null;
+  try {
+    data = (await res.json()) as T & { error?: string };
+  } catch {
+    data = null;
+  }
+  if (!res.ok || data === null) {
+    throw new Error(data?.error || "Something went wrong on our side. Please try again in a moment.");
+  }
   return data;
+}
+
+/** Only follow redirect URLs that are plain https links — never trust the
+ *  API blindly with javascript:/data: or other schemes. */
+function safeRedirectUrl(raw: string): string | null {
+  try {
+    const u = new URL(raw);
+    return u.protocol === "https:" ? u.href : null;
+  } catch {
+    return null;
+  }
 }
 
 const PRESETS: Record<Currency, number[]> = {
@@ -134,8 +154,10 @@ export default function BuyFlow() {
           customerName: info?.customerName || "",
         }),
       });
+      const redirectUrl = safeRedirectUrl(r.redirectUrl);
+      if (!redirectUrl) throw new Error("Could not start the payment. Please try again.");
       setStep("redirecting");
-      window.location.href = r.redirectUrl;
+      window.location.href = redirectUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not start the payment.");
       setBusy(false);
@@ -207,7 +229,14 @@ export default function BuyFlow() {
               disabled={busy || meter.length < 9}
               className="mt-5 w-full rounded-lg bg-ink px-5 py-3 font-display font-semibold text-white transition hover:bg-ink/85 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {busy ? "Checking with ZETDC…" : "Verify meter"}
+              {busy ? (
+                <span className="inline-flex items-center justify-center gap-2">
+                  <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Checking with ZETDC…
+                </span>
+              ) : (
+                "Verify meter"
+              )}
             </button>
           </form>
         )}
@@ -234,6 +263,7 @@ export default function BuyFlow() {
                   <button
                     key={c}
                     type="button"
+                    aria-pressed={currency === c}
                     onClick={() => { setCurrency(c); setAmount(""); }}
                     className={`rounded-lg border px-4 py-2.5 font-display font-semibold transition ${
                       currency === c

@@ -32,6 +32,41 @@ type Props = {
   onBack: () => void;
 };
 
+/* Module-level in-flight guard: React StrictMode mounts effects twice in
+ * dev, and the cleanup ref only suppressed the state update — the second
+ * POST still created a duplicate order and burned a unique-cents offset.
+ * Identical concurrent requests now share one promise; failures are
+ * cleared immediately so a retry can issue a fresh request. */
+const inflightOrders = new Map<string, Promise<OrderResp>>();
+
+function createOrder(body: { meter: string; phone: string; email: string; currency: string; amount: number }): Promise<OrderResp> {
+  const key = JSON.stringify(body);
+  const existing = inflightOrders.get(key);
+  if (existing) return existing;
+  const p = (async () => {
+    const res = await fetch(`${API}/order`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    let data: OrderResp | null = null;
+    try {
+      data = (await res.json()) as OrderResp;
+    } catch { /* non-JSON body (e.g. gateway error page) */ }
+    if (!res.ok || !data?.ok) throw new Error(data?.error || "Could not create your order. Please try again.");
+    return data;
+  })();
+  inflightOrders.set(key, p);
+  p.then(
+    // Keep a fulfilled promise around briefly so StrictMode's second
+    // effect run reuses the same order, then let it expire.
+    () => setTimeout(() => inflightOrders.delete(key), 10_000),
+    // Drop failures immediately so a retry issues a fresh request.
+    () => inflightOrders.delete(key)
+  );
+  return p;
+}
+
 function formatToken(t: string) {
   const digits = t.replace(/\D/g, "");
   return digits.replace(/(\d{4})(?=\d)/g, "$1 ").trim() || t;
@@ -67,20 +102,15 @@ export default function SemiAutoPay({ meter, phone, email, currency, amount, onB
   const [copied, setCopied] = useState(false);
   const stopped = useRef(false);
 
-  // Create the order once.
+  // Create the order once (idempotent via the module-level in-flight guard,
+  // so StrictMode's double effect run can't create two orders).
   useEffect(() => {
     stopped.current = false;
-    fetch(`${API}/order`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ meter, phone, email, currency, amount }),
-    })
-      .then(async (res) => {
-        const data = (await res.json()) as OrderResp;
-        if (!res.ok || !data.ok) throw new Error(data.error || "Could not create your order.");
-        if (!stopped.current) setOrder(data);
-      })
-      .catch((e) => setError(e instanceof Error ? e.message : "Could not create your order."));
+    createOrder({ meter, phone, email, currency, amount })
+      .then((data) => { if (!stopped.current) setOrder(data); })
+      .catch((e) => {
+        if (!stopped.current) setError(e instanceof Error ? e.message : "Could not create your order.");
+      });
     return () => { stopped.current = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
