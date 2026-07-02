@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { unitsForAmount, fmt } from "@/lib/tariff";
+import { unitsForAmount, fmt, RATE } from "@/lib/tariff";
 
 const API = "https://voltzw-vend.appwrite.network";
 
@@ -53,7 +53,8 @@ export default function BuyFlow() {
       const r = unitsForAmount(amt, 0);
       return `≈ ${fmt(r.totalUnits, 1)} kWh (first purchase this month)`;
     }
-    return null;
+    const r = unitsForAmount(amt * RATE, 0);
+    return `≈ ${fmt(r.totalUnits, 1)} kWh at ≈${fmt(RATE, 1)} ZWG/US$ (first purchase this month)`;
   }, [amt, currency]);
 
   async function checkMeter(e: React.FormEvent) {
@@ -154,7 +155,7 @@ export default function BuyFlow() {
               required
             />
             <p className="mt-2 text-xs text-dim">
-              The 11-digit number on your meter or an old token receipt. We&apos;ll confirm the
+              The meter number printed on your meter or an old token receipt (usually 11 digits). We&apos;ll confirm the
               registered name before you pay.
             </p>
             <button
@@ -241,9 +242,9 @@ export default function BuyFlow() {
                   id="phone"
                   inputMode="tel"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                  placeholder="07…"
-                  maxLength={10}
+                  onChange={(e) => setPhone(e.target.value.replace(/[^\d+]/g, ""))}
+                  placeholder="07… or +2637…"
+                  maxLength={13}
                   className="mt-2 w-full rounded-lg border border-line bg-paper px-4 py-2.5 font-mono outline-none transition focus:border-volt focus:ring-2 focus:ring-volt/30"
                   required
                 />
