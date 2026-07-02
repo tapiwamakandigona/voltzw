@@ -291,7 +291,7 @@ export default function BuyFlow() {
 
             <button
               type="submit"
-              disabled={busy || amt <= 0 || phone.length !== 10}
+              disabled={busy || amt <= 0 || !/^(07\d{8}|\+2637\d{8})$/.test(phone)}
               className="mt-6 w-full rounded-lg bg-volt px-5 py-3.5 font-display font-bold text-ink transition hover:bg-volt-deep hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
               {busy ? "Preparing secure checkout…" : `Pay ${currency === "USD" ? "$" : "ZWG "}${amount || "—"} with Paynow`}
