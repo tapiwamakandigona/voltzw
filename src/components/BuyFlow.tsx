@@ -130,7 +130,7 @@ export default function BuyFlow() {
                 active ? "bg-volt/15 text-ink" : done ? "text-volt-deep" : "text-dim"
               }`}
             >
-              <span className="mr-1.5 font-mono">{done ? "✓" : i + 1}.</span>
+              <span className="mr-1.5 font-mono">{done ? "✓" : `${i + 1}.`}</span>
               {s === "meter" ? "Your meter" : "Amount & payment"}
             </div>
           );
