@@ -694,7 +694,7 @@ export default async ({ req, res, log, error }) => {
   const cors = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, x-admin-key",
   };
   if (req.method === "OPTIONS") return res.text("", 204, cors);
 
