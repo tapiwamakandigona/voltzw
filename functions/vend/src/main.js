@@ -690,12 +690,24 @@ async function reconcile(db, log, error) {
 
 /* ---------------- Handler ---------------- */
 
-export default async ({ req, res, log, error }) => {
-  const cors = {
-    "Access-Control-Allow-Origin": "*",
+/* CORS: only the site itself (and localhost for dev) may make browser
+   requests — previously `*`, which let any origin call the admin routes
+   with a stolen key from the browser. Note this is defense-in-depth, not
+   auth: non-browser clients ignore CORS entirely, so ADMIN_KEY remains
+   the real gate on admin routes. */
+const ALLOWED_ORIGINS = [SITE, "http://localhost:3000"];
+
+function corsHeaders(origin) {
+  return {
+    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.includes(origin) ? origin : SITE,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, x-admin-key",
+    Vary: "Origin",
   };
+}
+
+const handler = async ({ req, res, log, error }) => {
+  const cors = corsHeaders(req.headers.origin || "");
   if (req.method === "OPTIONS") return res.text("", 204, cors);
 
   const client = new Client()
@@ -968,3 +980,5 @@ export default async ({ req, res, log, error }) => {
     return json({ ok: false, error: "Something went wrong. Please try again." }, 500);
   }
 };
+
+export default handler;

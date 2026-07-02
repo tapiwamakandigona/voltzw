@@ -3,6 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 
 const API = "https://voltzw-vend.appwrite.network";
+// sessionStorage (not localStorage): the admin key survives reloads within
+// the tab but is dropped when the tab closes, shrinking the window a future
+// XSS could exfiltrate it in. Residual risk: any same-tab XSS can still read
+// it while the session lives — acceptable for a single-admin page, and the
+// key itself is only ever sent to our own vend function.
 const KEY_STORAGE = "voltzw_admin_key";
 
 type Order = {
@@ -71,7 +76,7 @@ export default function AdminOrders() {
       const d = (await res.json()) as OrdersResp;
       if (!d.ok) throw new Error(d.error || "Could not load orders.");
       setData(d);
-      localStorage.setItem(KEY_STORAGE, adminKey);
+      sessionStorage.setItem(KEY_STORAGE, adminKey);
       setSaved(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not load orders.");
@@ -81,11 +86,13 @@ export default function AdminOrders() {
     }
   }, []);
 
-  // Restore the saved key after mount (deferred: localStorage is browser-only
+  // Restore the saved key after mount (deferred: sessionStorage is browser-only
   // and the page is statically prerendered — same pattern as TokenStatus).
   useEffect(() => {
     const t = setTimeout(() => {
-      const k = localStorage.getItem(KEY_STORAGE) || "";
+      // One-time cleanup of the key persisted by older builds.
+      localStorage.removeItem(KEY_STORAGE);
+      const k = sessionStorage.getItem(KEY_STORAGE) || "";
       if (k) { setKey(k); setSaved(true); load(k); }
     }, 0);
     return () => clearTimeout(t);
