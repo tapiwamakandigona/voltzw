@@ -19,11 +19,22 @@ export const TARIFFS = tariffs;
 export const BANDS = tariffs.bands as Band[];
 export const MONTHLY_QUOTA = tariffs.monthlyQuotaKwh;
 
+/** Sane ceiling for user-supplied amounts/units — far beyond any real
+ *  purchase, but keeps 1e400-style input from flowing Infinity into the
+ *  band math and rendering "∞". */
+export const MAX_INPUT = 1_000_000_000;
+
+/** NaN/Infinity → 0, negatives → 0, absurdly large → MAX_INPUT. */
+function sanitize(n: number): number {
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(n, MAX_INPUT);
+}
+
 /** Total ZWG cost (incl REA levy) to buy `units` kWh, given `alreadyBought`
  *  units purchased earlier this calendar month. */
 export function costForUnits(units: number, alreadyBought = 0): { totalZwg: number; slices: BandSlice[] } {
-  let remaining = units;
-  let position = Math.max(0, alreadyBought); // units consumed from the stepped ladder
+  let remaining = sanitize(units);
+  let position = sanitize(alreadyBought); // units consumed from the stepped ladder
   const slices: BandSlice[] = [];
   let totalZwg = 0;
 
@@ -48,8 +59,8 @@ export function costForUnits(units: number, alreadyBought = 0): { totalZwg: numb
 /** How many kWh `amountZwg` buys (incl REA levy), given `alreadyBought`
  *  units purchased earlier this calendar month. */
 export function unitsForAmount(amountZwg: number, alreadyBought = 0): { totalUnits: number; slices: BandSlice[] } {
-  let budget = amountZwg;
-  let position = Math.max(0, alreadyBought);
+  let budget = sanitize(amountZwg);
+  let position = sanitize(alreadyBought);
   const slices: BandSlice[] = [];
   let totalUnits = 0;
 
@@ -74,8 +85,9 @@ export function unitsForAmount(amountZwg: number, alreadyBought = 0): { totalUni
 
 /** Cost of the remaining discounted quota (up to 400 kWh) from `alreadyBought`. */
 export function remainingQuota(alreadyBought = 0): { units: number; costZwg: number } {
-  const units = Math.max(0, MONTHLY_QUOTA - alreadyBought);
-  const { totalZwg } = costForUnits(units, alreadyBought);
+  const already = sanitize(alreadyBought);
+  const units = Math.max(0, MONTHLY_QUOTA - already);
+  const { totalZwg } = costForUnits(units, already);
   return { units, costZwg: totalZwg };
 }
 

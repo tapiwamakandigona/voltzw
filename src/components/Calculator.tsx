@@ -9,6 +9,19 @@ import {
 type Mode = "money" | "units";
 type Currency = "ZWG" | "USD";
 
+const MAX = 1_000_000_000; // matches MAX_INPUT in lib/tariff
+
+/** Validate the primary calculator input. Returns the parsed value or a
+ *  human error — never lets NaN/Infinity/negatives reach the band math. */
+function parseInput(raw: string, what: string): { value: number; error: string | null } {
+  if (raw.trim() === "") return { value: 0, error: `Enter ${what} to calculate.` };
+  const n = parseFloat(raw);
+  if (!Number.isFinite(n)) return { value: 0, error: "Enter a valid number." };
+  if (n <= 0) return { value: 0, error: `Enter ${what} greater than 0.` };
+  if (n > MAX) return { value: 0, error: "That's more than we can price — try a smaller number." };
+  return { value: n, error: null };
+}
+
 function SliceTable({ slices, currency }: { slices: BandSlice[]; currency: Currency }) {
   if (slices.length === 0) return null;
   return (
@@ -60,23 +73,25 @@ export default function Calculator() {
 
   const result = useMemo(() => {
     if (mode === "money") {
-      const raw = Math.max(0, parseFloat(amount) || 0);
+      const { value: raw, error } = parseInput(amount, "an amount");
+      if (error) return { error, slices: [] as BandSlice[] };
       const amtZwg = currency === "USD" ? usdToZwg(raw) : raw;
       const r = unitsForAmount(amtZwg, alreadyN);
       const sub =
         currency === "USD"
           ? `for US$${fmt(raw)} (≈ ZWG ${fmt(amtZwg)})`
           : `for ZWG ${fmt(raw)} (≈ US$${fmt(zwgToUsd(raw))})`;
-      return { headline: `${fmt(r.totalUnits, 1)} kWh`, sub, slices: r.slices };
+      return { error: null, headline: `${fmt(r.totalUnits, 1)} kWh`, sub, slices: r.slices };
     }
-    const u = Math.max(0, parseFloat(units) || 0);
+    const { value: u, error } = parseInput(units, "the units you need");
+    if (error) return { error, slices: [] as BandSlice[] };
     const r = costForUnits(u, alreadyN);
     const headline = currency === "USD" ? `US$${fmt(zwgToUsd(r.totalZwg))}` : `ZWG ${fmt(r.totalZwg)}`;
     const sub =
       currency === "USD"
         ? `≈ ZWG ${fmt(r.totalZwg)} for ${fmt(u, 1)} kWh`
         : `≈ US$${fmt(zwgToUsd(r.totalZwg))} for ${fmt(u, 1)} kWh`;
-    return { headline, sub, slices: r.slices };
+    return { error: null, headline, sub, slices: r.slices };
   }, [mode, currency, amount, units, alreadyN]);
 
   const quota = useMemo(() => remainingQuota(alreadyN), [alreadyN]);
@@ -89,24 +104,30 @@ export default function Calculator() {
   return (
     <div className="rounded-2xl border border-line bg-card p-5 shadow-sm sm:p-7">
       <div className="flex flex-col gap-2 sm:flex-row">
-        <div className="grid flex-1 grid-cols-2 gap-2 rounded-lg bg-paper p-1 text-sm font-semibold">
+        <div role="group" aria-label="Calculation direction" className="grid flex-1 grid-cols-2 gap-2 rounded-lg bg-paper p-1 text-sm font-semibold">
           <button
+            type="button"
+            aria-pressed={mode === "money"}
             onClick={() => setMode("money")}
             className={`rounded-md px-3 py-2 transition ${mode === "money" ? "bg-ink text-white" : "text-dim hover:text-ink"}`}
           >
             Money → Units
           </button>
           <button
+            type="button"
+            aria-pressed={mode === "units"}
             onClick={() => setMode("units")}
             className={`rounded-md px-3 py-2 transition ${mode === "units" ? "bg-ink text-white" : "text-dim hover:text-ink"}`}
           >
             Units → Money
           </button>
         </div>
-        <div className="grid grid-cols-2 gap-2 rounded-lg bg-paper p-1 text-sm font-semibold sm:w-44">
+        <div role="group" aria-label="Currency" className="grid grid-cols-2 gap-2 rounded-lg bg-paper p-1 text-sm font-semibold sm:w-44">
           {(["ZWG", "USD"] as const).map((c) => (
             <button
               key={c}
+              type="button"
+              aria-pressed={currency === c}
               onClick={() => switchCurrency(c)}
               className={`rounded-md px-3 py-2 transition ${currency === c ? "bg-volt text-ink" : "text-dim hover:text-ink"}`}
             >
@@ -122,12 +143,12 @@ export default function Calculator() {
             <span className="mb-1 block text-sm font-medium text-dim">
               Amount to spend ({currency === "USD" ? "US$" : "ZWG"})
             </span>
-            <input type="number" inputMode="decimal" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} className={inputCls} />
+            <input type="number" inputMode="decimal" min="0" max={MAX} value={amount} onChange={(e) => setAmount(e.target.value)} aria-invalid={!!result.error} aria-describedby={result.error ? "calc-error" : undefined} className={inputCls} />
           </label>
         ) : (
           <label className="block">
             <span className="mb-1 block text-sm font-medium text-dim">Units you need (kWh)</span>
-            <input type="number" inputMode="decimal" min="0" value={units} onChange={(e) => setUnits(e.target.value)} className={inputCls} />
+            <input type="number" inputMode="decimal" min="0" max={MAX} value={units} onChange={(e) => setUnits(e.target.value)} aria-invalid={!!result.error} aria-describedby={result.error ? "calc-error" : undefined} className={inputCls} />
           </label>
         )}
         <label className="block">
@@ -136,11 +157,23 @@ export default function Calculator() {
         </label>
       </div>
 
-      <div className="mt-6 rounded-xl bg-ink p-5 text-white">
-        <p className="text-xs uppercase tracking-wider text-white/60">You get</p>
-        <p className="font-display mt-1 text-3xl font-bold text-volt sm:text-4xl">{result.headline}</p>
-        <p className="mt-1 text-sm text-white/70">{result.sub}</p>
-      </div>
+      {result.error ? (
+        <div role="status" className="mt-6 rounded-xl border border-dashed border-line bg-paper p-5">
+          <p className="text-xs uppercase tracking-wider text-dim">{mode === "money" ? "You get" : "You pay"}</p>
+          <p id="calc-error" className="font-display mt-1 text-lg font-semibold">{result.error}</p>
+          <p className="mt-1 text-sm text-dim">
+            {mode === "money"
+              ? "Type how much you want to spend and we'll show the units, band by band."
+              : "Type how many units you need and we'll show the exact cost, band by band."}
+          </p>
+        </div>
+      ) : (
+        <div className="mt-6 rounded-xl bg-ink p-5 text-white">
+          <p className="text-xs uppercase tracking-wider text-white/60">{mode === "money" ? "You get" : "You pay"}</p>
+          <p className="font-display mt-1 text-3xl font-bold text-volt sm:text-4xl">{result.headline}</p>
+          <p className="mt-1 text-sm text-white/70">{result.sub}</p>
+        </div>
+      )}
 
       <SliceTable slices={result.slices} currency={currency} />
 
