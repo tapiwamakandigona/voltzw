@@ -101,16 +101,16 @@ export default function RetrievePage() {
         <div className="rounded-2xl border border-line bg-ink p-6 text-white sm:p-8">
           <h2 className="font-display text-xl font-bold">Never lose a token again</h2>
           <p className="mt-3 text-sm leading-relaxed text-white/70">
-            VoltZW will soon sell tokens with delivery <strong className="text-white">on screen, by WhatsApp and by SMS</strong> —
+            Buy your tokens on VoltZW and they are delivered <strong className="text-white">on screen and by SMS</strong> —
             and every purchase stays attached to your meter number, so you can always look it up. No account needed.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
-            <a
-              href="mailto:silentics.org@gmail.com?subject=VoltZW%20early%20access"
+            <Link
+              href="/buy/"
               className="rounded-lg bg-volt px-5 py-3 text-sm font-semibold text-ink transition hover:bg-volt-deep hover:text-white"
             >
-              Get early access
-            </a>
+              Buy tokens now
+            </Link>
             <Link href="/" className="rounded-lg border border-white/30 px-5 py-3 text-sm font-semibold transition hover:border-volt hover:text-volt">
               Try the calculator
             </Link>

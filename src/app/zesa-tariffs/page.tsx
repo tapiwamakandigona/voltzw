@@ -86,7 +86,7 @@ export default function TariffsPage() {
         </div>
         <div>
           <h2 className="font-display text-2xl font-bold">What it costs, cumulatively</h2>
-          <div className="mt-4 overflow-hidden rounded-2xl border border-line bg-card shadow-sm">
+          <div className="mt-4 overflow-x-auto rounded-2xl border border-line bg-card shadow-sm">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line bg-paper text-left text-xs uppercase tracking-wider text-dim">
@@ -115,6 +115,18 @@ export default function TariffsPage() {
               to see your exact price before you pay.
             </p>
           </div>
+        </div>
+      </section>
+
+      <section className="container-page mt-14">
+        <div className="flex flex-col items-start justify-between gap-4 rounded-2xl bg-ink p-6 text-white sm:flex-row sm:items-center sm:p-8">
+          <div>
+            <h2 className="font-display text-xl font-bold">Ready to top up?</h2>
+            <p className="mt-1 text-sm text-white/70">Buy ZESA tokens with EcoCash in USD or ZWG — token on screen and by SMS.</p>
+          </div>
+          <Link href="/buy/" className="shrink-0 rounded-lg bg-volt px-6 py-3 font-semibold text-ink transition hover:bg-volt-deep hover:text-white">
+            Buy tokens →
+          </Link>
         </div>
       </section>
     </>

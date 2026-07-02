@@ -29,7 +29,7 @@ const faqs = [
   },
   {
     q: "Can I buy ZESA tokens on VoltZW?",
-    a: "Not yet — token purchases with EcoCash and Visa/Mastercard are coming soon, with delivery on screen, by WhatsApp and SMS. For now, use the calculator to plan your purchase, and check our tariffs and token retrieval guides.",
+    a: "Yes — buy tokens right here with EcoCash and other Paynow methods, in USD or ZWG. Verify your meter, pay, and your 20-digit token appears on screen and is sent by SMS. Your purchase history stays attached to your meter number, so a lost SMS never means a lost token.",
   },
 ];
 
@@ -91,10 +91,10 @@ export default function Home() {
             cta: "Retrieve your token",
           },
           {
-            href: "#buy",
-            title: "Buy tokens (soon)",
-            desc: "EcoCash & card purchases with delivery on screen, WhatsApp and SMS — so tokens never get lost again.",
-            cta: "Learn more",
+            href: "/buy/",
+            title: "Buy tokens online",
+            desc: "Pay with EcoCash in USD or ZWG and get your token on screen and by SMS — no account needed.",
+            cta: "Buy now",
           },
         ].map((c) => (
           <Link key={c.title} href={c.href} className="group rounded-2xl border border-line bg-card p-6 shadow-sm transition hover:border-volt-deep">
@@ -106,20 +106,19 @@ export default function Home() {
       </section>
 
       <section id="buy" className="container-page mt-16">
-        <div className="rounded-2xl border border-line bg-card p-6 sm:p-10">
-          <h2 className="font-display text-2xl font-bold">Buying tokens is coming to VoltZW</h2>
-          <p className="mt-3 max-w-2xl leading-relaxed text-dim">
-            Soon you will be able to buy ZESA tokens right here — pay with EcoCash (ZWG) or Visa/Mastercard (USD),
-            and get your 20-digit token on screen, by WhatsApp and by SMS. Your purchase history stays attached to your
-            meter number, so a lost SMS never means a lost token. Living in the diaspora? You&apos;ll be able to keep a
-            family meter topped up automatically every month.
+        <div className="rounded-2xl bg-ink p-6 text-white sm:p-10">
+          <h2 className="font-display text-2xl font-bold">Buy ZESA tokens on VoltZW — <span className="text-volt">live now</span></h2>
+          <p className="mt-3 max-w-2xl leading-relaxed text-white/70">
+            Pay with EcoCash and other Paynow methods, in <strong className="text-white">USD or ZWG</strong>. We verify your
+            meter first, then your 20-digit token appears on screen and is sent by SMS. Every purchase stays attached to
+            your meter number — a lost SMS never means a lost token. Perfect for topping up a family meter from the diaspora.
           </p>
-          <a
-            href="mailto:silentics.org@gmail.com?subject=VoltZW%20early%20access&body=Please%20add%20me%20to%20the%20VoltZW%20early%20access%20list."
-            className="mt-5 inline-block rounded-lg bg-volt px-5 py-3 font-semibold text-ink transition hover:bg-volt-deep hover:text-white"
+          <Link
+            href="/buy/"
+            className="mt-5 inline-block rounded-lg bg-volt px-6 py-3 font-semibold text-ink transition hover:bg-volt-deep hover:text-white"
           >
-            Get early access
-          </a>
+            Buy tokens now →
+          </Link>
         </div>
       </section>
 

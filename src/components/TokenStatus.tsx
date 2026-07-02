@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 
 const API = "https://voltzw-vend.appwrite.network";
 
@@ -26,8 +27,11 @@ export default function TokenStatus() {
 
   useEffect(() => {
     const ref = new URLSearchParams(window.location.search).get("ref");
-    if (!ref) { setNoRef(true); return; }
     let stop = false;
+    if (!ref) {
+      const t = setTimeout(() => setNoRef(true), 0);
+      return () => clearTimeout(t);
+    }
 
     async function poll() {
       if (stop) return;
@@ -58,7 +62,7 @@ export default function TokenStatus() {
       <div className="rounded-xl border border-line bg-card p-8 text-center">
         <p className="font-display text-lg font-semibold">No purchase reference found</p>
         <p className="mt-2 text-sm text-dim">
-          Start a purchase from the <a href="/buy/" className="text-volt-deep underline">buy page</a>.
+          Start a purchase from the <Link href="/buy/" className="text-volt-deep underline">buy page</Link>.
         </p>
       </div>
     );
@@ -109,7 +113,7 @@ export default function TokenStatus() {
       <div className="rounded-xl border border-line bg-card p-8 text-center">
         <p className="font-display text-lg font-semibold">Payment cancelled</p>
         <p className="mt-2 text-sm text-dim">
-          No money moved. <a href="/buy/" className="text-volt-deep underline">Try again</a> whenever you&apos;re ready.
+          No money moved. <Link href="/buy/" className="text-volt-deep underline">Try again</Link> whenever you&apos;re ready.
         </p>
       </div>
     );
