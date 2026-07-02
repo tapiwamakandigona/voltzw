@@ -4,15 +4,20 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { unitsForAmount, fmt, RATE } from "@/lib/tariff";
 import { tokenValueForGross } from "@/lib/fee";
+import SemiAutoPay from "@/components/SemiAutoPay";
 
 const API = "https://voltzw-vend.appwrite.network";
 
-// Temporary launch gate: payments are wired up end-to-end, but vending float
-// isn't loaded yet. Flip to true to re-enable live Paynow checkout.
-const PAYMENTS_LIVE = false;
+// Build-time launch gate (static export):
+//   coming_soon → waitlist capture (current behavior)
+//   semi_auto   → customer pays the Hot Recharge wallet via EcoCash; backend
+//                 matches the exact amount and vends automatically
+//   paynow      → hosted Paynow checkout
+// Keep in sync with PAYMENT_MODE on the vend function.
+const PAYMENT_MODE = process.env.NEXT_PUBLIC_PAYMENT_MODE || "coming_soon";
 
 type Currency = "USD" | "ZWG";
-type Step = "meter" | "amount" | "redirecting" | "waitlisted";
+type Step = "meter" | "amount" | "ecocash" | "redirecting" | "waitlisted";
 
 type MeterInfo = { customerName: string; address: string };
 
@@ -94,7 +99,13 @@ export default function BuyFlow() {
     e.preventDefault();
     setError("");
 
-    if (!PAYMENTS_LIVE) {
+    if (PAYMENT_MODE === "semi_auto") {
+      // SemiAutoPay creates the order and walks the customer through EcoCash.
+      setStep("ecocash");
+      return;
+    }
+
+    if (PAYMENT_MODE !== "paynow") {
       // Launch gate: capture interest (fire-and-forget) and show the coming-soon state.
       api("/waitlist", {
         method: "POST",
@@ -131,7 +142,8 @@ export default function BuyFlow() {
     }
   }
 
-  if (live === false) {
+  // semi_auto doesn't depend on the Paynow config that `configured` reports.
+  if (live === false && PAYMENT_MODE !== "semi_auto") {
     return (
       <div className="rounded-xl border border-line bg-card p-8 text-center">
         <p className="font-display text-xl font-bold">Token purchases are almost here ⚡</p>
@@ -153,7 +165,7 @@ export default function BuyFlow() {
       {/* progress */}
       <div className="flex border-b border-line text-xs font-medium uppercase tracking-wider">
         {(["meter", "amount"] as const).map((s, i) => {
-          const active = step === s || ((step === "redirecting" || step === "waitlisted") && s === "amount");
+          const active = step === s || ((step === "redirecting" || step === "waitlisted" || step === "ecocash") && s === "amount");
           const done = s === "meter" && step !== "meter";
           return (
             <div
@@ -315,13 +327,35 @@ export default function BuyFlow() {
               disabled={busy || amt <= 0 || !/^(07\d{8}|\+2637\d{8})$/.test(phone)}
               className="mt-6 w-full rounded-lg bg-volt px-5 py-3.5 font-display font-bold text-ink transition hover:bg-volt-deep hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {busy ? "Preparing secure checkout…" : `Pay ${currency === "USD" ? "$" : "ZWG "}${amount || "—"} with Paynow`}
+              {busy
+                ? "Preparing secure checkout…"
+                : PAYMENT_MODE === "semi_auto"
+                  ? `Pay ${currency === "USD" ? "$" : "ZWG "}${amount || "—"} with EcoCash`
+                  : `Pay ${currency === "USD" ? "$" : "ZWG "}${amount || "—"} with Paynow`}
             </button>
-            <p className="mt-3 text-center text-xs text-dim">
-              Secure payment via Paynow — EcoCash, Zimswitch, InnBucks, bank &amp; more.
-              Payment fees are shown at checkout before you confirm.
-            </p>
+            {PAYMENT_MODE === "semi_auto" ? (
+              <p className="mt-3 text-center text-xs text-dim">
+                Pay by EcoCash from your phone — we&apos;ll show you exactly how on the next step,
+                and your token is generated automatically once your payment lands.
+              </p>
+            ) : (
+              <p className="mt-3 text-center text-xs text-dim">
+                Secure payment via Paynow — EcoCash, Zimswitch, InnBucks, bank &amp; more.
+                Payment fees are shown at checkout before you confirm.
+              </p>
+            )}
           </form>
+        )}
+
+        {step === "ecocash" && (
+          <SemiAutoPay
+            meter={meter.trim()}
+            phone={phone.trim()}
+            email={email.trim()}
+            currency={currency}
+            amount={amt}
+            onBack={() => setStep("amount")}
+          />
         )}
 
         {step === "waitlisted" && (
