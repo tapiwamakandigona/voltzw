@@ -7,6 +7,7 @@ const HR_BASE = "https://ssl.hot.co.zw/api/v1/";
 const PAYNOW_INITIATE = "https://www.paynow.co.zw/interface/initiatetransaction";
 const DB_ID = "voltdb";
 const TABLE = "transactions";
+const WAITLIST = "waitlist";
 const LOCKS = "vend_locks";
 const SITE = process.env.SITE_URL || "https://zesa.tapiwa.me";
 const LOCK_STALE_MS = 120_000; // consider a vend attempt dead after 2 min
@@ -326,6 +327,25 @@ export default async ({ req, res, log, error }) => {
         ok: false,
         error: r.ReplyMsg || "Meter not found. Double-check the number.",
       }, 404);
+    }
+
+    /* ---- launch waitlist (pre-launch interest capture) ---- */
+    if (path === "/waitlist" && req.method === "POST") {
+      const { meter, phone, email, currency, amount } = req.bodyJson || {};
+      try {
+        await db.createRow(DB_ID, WAITLIST, ID.unique(), {
+          meter: String(meter || "").slice(0, 20),
+          phone: String(phone || "").slice(0, 20),
+          email: String(email || "").slice(0, 320),
+          currency: String(currency || "").slice(0, 10),
+          amount: Number(amount) || 0,
+          createdAt: new Date().toISOString(),
+        });
+      } catch (e) {
+        // Table may not exist yet — never let the waitlist break the UI.
+        error(`waitlist write failed: ${e}`);
+      }
+      return json({ ok: true });
     }
 
     /* ---- start payment ---- */
