@@ -1,0 +1,139 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import Calculator from "@/components/Calculator";
+import { TARIFFS } from "@/lib/tariff";
+
+export const metadata: Metadata = {
+  title: "Free ZESA Calculator — Convert Money to Units with Current Tariffs",
+  description:
+    "Free ZESA token calculator for Zimbabwe. See exactly how many units (kWh) your money buys with the current ZETDC stepped tariffs, including the 6% REA levy and your 400 kWh monthly quota.",
+  alternates: { canonical: "/" },
+};
+
+const faqs = [
+  {
+    q: "How many units do I get for my money?",
+    a: "It depends on how much you have already bought this month. ZESA uses a stepped tariff: the first 50 units each month are cheapest, and each band after that costs more. Our calculator applies the exact ZERA-approved band prices, including the 6% REA levy, and accounts for units you have already purchased.",
+  },
+  {
+    q: "Is ZESA cheaper at the beginning of the month?",
+    a: "Not exactly — prices don't change with the date. What resets on the 1st is your 400 kWh discounted monthly quota. If you already used your cheap bands this month, new purchases fall into expensive bands. Buying early in the month simply means you are starting from the cheapest band again.",
+  },
+  {
+    q: "What is the 400 kWh monthly quota?",
+    a: "Every prepaid meter gets 400 kWh per calendar month at discounted stepped rates — roughly ZWG 2,030 (about US$79) buys the full quota. Every unit above 400 kWh in the same month is charged at the top rate. The quota resets on the 1st of each month.",
+  },
+  {
+    q: "How do I check my ZESA balance online?",
+    a: "Your remaining units live on the meter itself — press 07 on most prepaid meters to display the balance. To see your purchase history and past tokens, use the ZETDC self-service portal, or the channel you bought from (EcoCash, your bank, or an online vendor).",
+  },
+  {
+    q: "Can I buy ZESA tokens on VoltZW?",
+    a: "Not yet — token purchases with EcoCash and Visa/Mastercard are coming soon, with delivery on screen, by WhatsApp and SMS. For now, use the calculator to plan your purchase, and check our tariffs and token retrieval guides.",
+  },
+];
+
+export default function Home() {
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  };
+  const appJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "VoltZW ZESA Calculator",
+    url: "https://zesa.tapiwa.me/",
+    applicationCategory: "UtilitiesApplication",
+    operatingSystem: "Any",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    description: "Free ZESA electricity calculator with current ZETDC stepped tariffs for Zimbabwe.",
+  };
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }} />
+
+      <section className="border-b border-line bg-ink text-white">
+        <div className="container-page py-12 sm:py-16">
+          <p className="text-xs font-semibold uppercase tracking-widest text-volt">Free · No login · Live tariffs</p>
+          <h1 className="font-display mt-3 max-w-2xl text-4xl font-bold leading-tight sm:text-5xl">
+            ZESA calculator with the <span className="text-volt">real stepped tariffs</span>
+          </h1>
+          <p className="mt-4 max-w-2xl text-lg text-white/70">
+            See exactly how many units your money buys — band by band, including the 6% REA levy and your
+            400 kWh monthly quota. Updated whenever ZERA changes the rates.
+          </p>
+        </div>
+      </section>
+
+      <section className="container-page -mt-6 pb-4 sm:-mt-8">
+        <Calculator />
+      </section>
+
+      <section className="container-page mt-14 grid gap-6 sm:grid-cols-3">
+        {[
+          {
+            href: "/zesa-tariffs/",
+            title: "Current ZESA tariffs",
+            desc: `All six bands at ZERA-approved rates, effective ${TARIFFS.effectiveDate}. Understand the quota before you buy.`,
+            cta: "See the tariffs",
+          },
+          {
+            href: "/retrieve-zesa-token/",
+            title: "Token didn't arrive?",
+            desc: "The complete guide to retrieving a lost ZESA token — EcoCash, banks, the ZETDC portal and WhatsApp lines.",
+            cta: "Retrieve your token",
+          },
+          {
+            href: "#buy",
+            title: "Buy tokens (soon)",
+            desc: "EcoCash & card purchases with delivery on screen, WhatsApp and SMS — so tokens never get lost again.",
+            cta: "Learn more",
+          },
+        ].map((c) => (
+          <Link key={c.title} href={c.href} className="group rounded-2xl border border-line bg-card p-6 shadow-sm transition hover:border-volt-deep">
+            <h2 className="font-display text-lg font-bold">{c.title}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-dim">{c.desc}</p>
+            <p className="mt-4 text-sm font-semibold text-volt-deep group-hover:underline">{c.cta} →</p>
+          </Link>
+        ))}
+      </section>
+
+      <section id="buy" className="container-page mt-16">
+        <div className="rounded-2xl border border-line bg-card p-6 sm:p-10">
+          <h2 className="font-display text-2xl font-bold">Buying tokens is coming to VoltZW</h2>
+          <p className="mt-3 max-w-2xl leading-relaxed text-dim">
+            Soon you will be able to buy ZESA tokens right here — pay with EcoCash (ZWG) or Visa/Mastercard (USD),
+            and get your 20-digit token on screen, by WhatsApp and by SMS. Your purchase history stays attached to your
+            meter number, so a lost SMS never means a lost token. Living in the diaspora? You&apos;ll be able to keep a
+            family meter topped up automatically every month.
+          </p>
+          <a
+            href="mailto:silentics.org@gmail.com?subject=VoltZW%20early%20access&body=Please%20add%20me%20to%20the%20VoltZW%20early%20access%20list."
+            className="mt-5 inline-block rounded-lg bg-volt px-5 py-3 font-semibold text-ink transition hover:bg-volt-deep hover:text-white"
+          >
+            Get early access
+          </a>
+        </div>
+      </section>
+
+      <section className="container-page mt-16 max-w-3xl">
+        <h2 className="font-display text-2xl font-bold">ZESA calculator — frequently asked questions</h2>
+        <div className="mt-6 space-y-6">
+          {faqs.map((f) => (
+            <div key={f.q} className="border-b border-line pb-6">
+              <h3 className="font-semibold">{f.q}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-dim">{f.a}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
