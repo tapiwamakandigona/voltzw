@@ -84,6 +84,10 @@ const effectiveDate = `${em[3]}-${String(month).padStart(2, "0")}-${String(+em[1
 const current = JSON.parse(readFileSync(FILE, "utf8"));
 
 // Sanity: monotonic non-decreasing bands, plausible magnitudes, no wild jumps.
+// NOTE: inclLevyZwg is kept verbatim as published (the source mixes rounding
+// and truncation in the 4th decimal — e.g. 2.278576→2.2786 but 7.405372→7.4053).
+// We deliberately do NOT recompute it from baseZwg × (1 + levy) — see
+// `bandsNote` in src/data/tariffs.json. Impact ≤ 0.0001 ZWG/unit.
 for (let i = 0; i < scraped.length; i++) {
   const s = scraped[i];
   if (!(s.baseZwg > 0.1 && s.baseZwg < 100)) fail(`band ${i + 1} base rate implausible: ${s.baseZwg}`);

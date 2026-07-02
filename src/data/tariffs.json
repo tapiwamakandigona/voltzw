@@ -3,6 +3,7 @@
   "lastVerified": "2026-07-02",
   "currency": "ZWG",
   "reaLevyPct": 6,
+  "bandsNote": "inclLevyZwg values are as published by the source (mixed rounding in the 4th decimal), not recomputed from baseZwg x 1.06 — do not 'fix' them here.",
   "monthlyQuotaKwh": 400,
   "zwgPerUsdApprox": 28.5,
   "sources": [
