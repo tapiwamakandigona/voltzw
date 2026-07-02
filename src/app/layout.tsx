@@ -33,15 +33,15 @@ export const metadata: Metadata = {
 function Header() {
   return (
     <header className="border-b border-line bg-paper/90 sticky top-0 z-40 backdrop-blur">
-      <div className="container-page flex h-14 items-center justify-between">
+      <div className="container-page flex h-14 items-center justify-between gap-3">
         <Link href="/" className="font-display text-lg font-bold tracking-tight">
           <span className="bg-volt px-1.5 py-0.5 mr-0.5">Volt</span>ZW
         </Link>
-        <nav className="flex items-center gap-4 text-sm font-medium sm:gap-6">
-          <Link href="/" className="hover:text-volt-deep">Calculator</Link>
+        <nav className="flex items-center gap-3 text-[13px] font-medium sm:gap-6 sm:text-sm">
+          <Link href="/" className="hover:text-volt-deep"><span className="sm:hidden">Calc</span><span className="hidden sm:inline">Calculator</span></Link>
           <Link href="/zesa-tariffs/" className="hover:text-volt-deep">Tariffs</Link>
           <Link href="/retrieve-zesa-token/" className="hover:text-volt-deep"><span className="sm:hidden">Retrieve</span><span className="hidden sm:inline">Retrieve token</span></Link>
-          <Link href="/buy/" className="rounded-md bg-volt px-3 py-1.5 font-semibold text-ink transition hover:bg-volt-deep hover:text-white">Buy tokens</Link>
+          <Link href="/buy/" className="whitespace-nowrap rounded-md bg-volt px-2.5 py-1.5 font-semibold text-ink transition hover:bg-volt-deep hover:text-white sm:px-3"><span className="sm:hidden">Buy</span><span className="hidden sm:inline">Buy tokens</span></Link>
         </nav>
       </div>
     </header>

@@ -32,22 +32,22 @@ export default function TariffsPage() {
 
       <section className="container-page mt-10">
         <div className="overflow-x-auto rounded-2xl border border-line bg-card shadow-sm">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs sm:text-sm">
             <thead>
               <tr className="border-b border-line bg-paper text-left text-xs uppercase tracking-wider text-dim">
-                <th className="px-4 py-3 font-medium">Consumption band (monthly)</th>
-                <th className="px-4 py-3 text-right font-medium">Base ZWG/unit</th>
-                <th className="px-4 py-3 text-right font-medium">Incl. 6% REA</th>
-                <th className="px-4 py-3 text-right font-medium">≈ USD/unit</th>
+                <th className="px-2.5 py-3 sm:px-4 font-medium">Consumption band (monthly)</th>
+                <th className="px-2.5 py-3 sm:px-4 text-right font-medium">Base ZWG/unit</th>
+                <th className="px-2.5 py-3 sm:px-4 text-right font-medium">Incl. 6% REA</th>
+                <th className="px-2.5 py-3 sm:px-4 text-right font-medium">≈ USD/unit</th>
               </tr>
             </thead>
             <tbody>
               {BANDS.map((b) => (
                 <tr key={b.label} className="border-b border-line last:border-0">
-                  <td className="px-4 py-3 font-medium">{b.label}</td>
-                  <td className="px-4 py-3 text-right font-mono">{fmt(b.baseZwg, 4)}</td>
-                  <td className="px-4 py-3 text-right font-mono font-semibold">{fmt(b.inclLevyZwg, 4)}</td>
-                  <td className="px-4 py-3 text-right font-mono">${fmt(b.usdApprox)}</td>
+                  <td className="px-2.5 py-3 sm:px-4 font-medium">{b.label}</td>
+                  <td className="px-2.5 py-3 sm:px-4 text-right font-mono">{fmt(b.baseZwg, 4)}</td>
+                  <td className="px-2.5 py-3 sm:px-4 text-right font-mono font-semibold">{fmt(b.inclLevyZwg, 4)}</td>
+                  <td className="px-2.5 py-3 sm:px-4 text-right font-mono">${fmt(b.usdApprox)}</td>
                 </tr>
               ))}
             </tbody>
@@ -87,20 +87,20 @@ export default function TariffsPage() {
         <div>
           <h2 className="font-display text-2xl font-bold">What it costs, cumulatively</h2>
           <div className="mt-4 overflow-x-auto rounded-2xl border border-line bg-card shadow-sm">
-            <table className="w-full text-sm">
+            <table className="w-full text-xs sm:text-sm">
               <thead>
                 <tr className="border-b border-line bg-paper text-left text-xs uppercase tracking-wider text-dim">
-                  <th className="px-4 py-3 font-medium">Buying up to…</th>
-                  <th className="px-4 py-3 text-right font-medium">Total ZWG</th>
-                  <th className="px-4 py-3 text-right font-medium">≈ USD</th>
+                  <th className="px-2.5 py-3 sm:px-4 font-medium">Buying up to…</th>
+                  <th className="px-2.5 py-3 sm:px-4 text-right font-medium">Total ZWG</th>
+                  <th className="px-2.5 py-3 sm:px-4 text-right font-medium">≈ USD</th>
                 </tr>
               </thead>
               <tbody>
                 {cumulative.map((c) => (
                   <tr key={c.label} className="border-b border-line last:border-0">
-                    <td className="px-4 py-3 font-medium">{c.label}</td>
-                    <td className="px-4 py-3 text-right font-mono">{fmt(c.total)}</td>
-                    <td className="px-4 py-3 text-right font-mono">${fmt(zwgToUsd(c.total))}</td>
+                    <td className="px-2.5 py-3 sm:px-4 font-medium">{c.label}</td>
+                    <td className="px-2.5 py-3 sm:px-4 text-right font-mono">{fmt(c.total)}</td>
+                    <td className="px-2.5 py-3 sm:px-4 text-right font-mono">${fmt(zwgToUsd(c.total))}</td>
                   </tr>
                 ))}
               </tbody>
