@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { unitsForAmount, fmt, RATE } from "@/lib/tariff";
+import { tokenValueForGross } from "@/lib/fee";
 
 const API = "https://voltzw-vend.appwrite.network";
 
@@ -28,6 +29,7 @@ const PRESETS: Record<Currency, number[]> = {
 
 export default function BuyFlow() {
   const [live, setLive] = useState<boolean | null>(null);
+  const [feePct, setFeePct] = useState<number | null>(null); // null = unknown (fee shown as included)
   const [step, setStep] = useState<Step>("meter");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -41,21 +43,30 @@ export default function BuyFlow() {
   const [email, setEmail] = useState("");
 
   useEffect(() => {
-    api<{ configured: boolean }>("/health")
-      .then((h) => setLive(h.configured))
+    api<{ configured: boolean; feePct?: number }>("/health")
+      .then((h) => {
+        setLive(h.configured);
+        if (typeof h.feePct === "number" && h.feePct >= 0) setFeePct(h.feePct);
+      })
       .catch(() => setLive(false));
   }, []);
 
   const amt = parseFloat(amount) || 0;
+  // Token value actually vended once the service fee is taken out (null = no breakdown shown).
+  const tokenValue = useMemo(
+    () => (feePct !== null && feePct > 0 && amt > 0 ? tokenValueForGross(amt, feePct) : null),
+    [amt, feePct]
+  );
   const estimate = useMemo(() => {
     if (amt <= 0) return null;
+    const value = tokenValue ?? amt;
     if (currency === "ZWG") {
-      const r = unitsForAmount(amt, 0);
+      const r = unitsForAmount(value, 0);
       return `≈ ${fmt(r.totalUnits, 1)} kWh (first purchase this month)`;
     }
-    const r = unitsForAmount(amt * RATE, 0);
+    const r = unitsForAmount(value * RATE, 0);
     return `≈ ${fmt(r.totalUnits, 1)} kWh at ≈${fmt(RATE, 1)} ZWG/US$ (first purchase this month)`;
-  }, [amt, currency]);
+  }, [amt, currency, tokenValue]);
 
   async function checkMeter(e: React.FormEvent) {
     e.preventDefault();
@@ -263,6 +274,20 @@ export default function BuyFlow() {
                 />
               </div>
             </div>
+
+            {tokenValue !== null && (
+              <p className="mt-5 rounded-lg border border-line bg-paper px-4 py-2.5 text-xs text-dim">
+                You pay{" "}
+                <span className="font-medium text-ink">
+                  {currency === "USD" ? `$${amt.toFixed(2)}` : `ZWG ${amt.toFixed(2)}`}
+                </span>{" "}
+                — includes our service fee; electricity token value ≈{" "}
+                <span className="font-medium text-ink">
+                  {currency === "USD" ? `$${tokenValue.toFixed(2)}` : `ZWG ${tokenValue.toFixed(2)}`}
+                </span>
+                .
+              </p>
+            )}
 
             <button
               type="submit"
