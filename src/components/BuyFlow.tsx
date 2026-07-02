@@ -7,8 +7,12 @@ import { tokenValueForGross } from "@/lib/fee";
 
 const API = "https://voltzw-vend.appwrite.network";
 
+// Temporary launch gate: payments are wired up end-to-end, but vending float
+// isn't loaded yet. Flip to true to re-enable live Paynow checkout.
+const PAYMENTS_LIVE = false;
+
 type Currency = "USD" | "ZWG";
-type Step = "meter" | "amount" | "redirecting";
+type Step = "meter" | "amount" | "redirecting" | "waitlisted";
 
 type MeterInfo = { customerName: string; address: string };
 
@@ -89,6 +93,23 @@ export default function BuyFlow() {
   async function startPayment(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (!PAYMENTS_LIVE) {
+      // Launch gate: capture interest (fire-and-forget) and show the coming-soon state.
+      api("/waitlist", {
+        method: "POST",
+        body: JSON.stringify({
+          meter: meter.trim(),
+          phone: phone.trim(),
+          email: email.trim(),
+          currency,
+          amount: amt,
+        }),
+      }).catch(() => { /* never block the UI on the waitlist */ });
+      setStep("waitlisted");
+      return;
+    }
+
     setBusy(true);
     try {
       const r = await api<{ redirectUrl: string }>("/initiate", {
@@ -132,7 +153,7 @@ export default function BuyFlow() {
       {/* progress */}
       <div className="flex border-b border-line text-xs font-medium uppercase tracking-wider">
         {(["meter", "amount"] as const).map((s, i) => {
-          const active = step === s || (step === "redirecting" && s === "amount");
+          const active = step === s || ((step === "redirecting" || step === "waitlisted") && s === "amount");
           const done = s === "meter" && step !== "meter";
           return (
             <div
@@ -301,6 +322,32 @@ export default function BuyFlow() {
               Payment fees are shown at checkout before you confirm.
             </p>
           </form>
+        )}
+
+        {step === "waitlisted" && (
+          <div className="animate-rise py-6 text-center sm:py-8">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-volt/40 bg-volt/15 text-2xl">
+              ⚡
+            </div>
+            <span className="mt-4 inline-block rounded-full border border-line bg-paper px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-volt-deep">
+              Coming soon
+            </span>
+            <p className="mt-3 font-display text-xl font-bold">
+              Almost there — token purchases launch very soon ⚡
+            </p>
+            <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-dim">
+              Your meter checks out{info?.customerName ? <> — registered to <span className="font-medium text-ink">{info.customerName}</span></> : null}.
+              Meter verification is already live; we&apos;re just finishing the final payment plumbing.
+            </p>
+            <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed">
+              We&apos;ll {email.trim() ? "SMS and email" : "SMS"} you at{" "}
+              <span className="font-mono font-medium">{phone}</span> the moment it launches, so you can be first in line.
+            </p>
+            <p className="mt-5 text-xs text-dim">
+              Meanwhile, plan your purchase with the{" "}
+              <Link href="/" className="font-medium text-volt-deep underline">free calculator</Link>.
+            </p>
+          </div>
         )}
 
         {step === "redirecting" && (
