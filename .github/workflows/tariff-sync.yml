@@ -1,0 +1,63 @@
+name: ZESA tariff sync
+
+on:
+  schedule:
+    - cron: "30 5 * * *" # 07:30 Harare (CAT), daily
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tariff-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Check published tariffs
+        id: scrape
+        run: |
+          set -o pipefail
+          OUT=$(node scripts/update-tariffs.mjs)
+          echo "$OUT"
+          if [[ "$OUT" == changed* ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build site
+        if: steps.scrape.outputs.changed == 'true'
+        run: |
+          npm ci
+          npm run build
+
+      - name: Commit new tariffs
+        if: steps.scrape.outputs.changed == 'true'
+        run: |
+          git config user.name "voltzw-tariff-bot"
+          git config user.email "actions@github.com"
+          git add src/data/tariffs.json
+          git commit -m "ZESA tariff update ($(node -p "require('./src/data/tariffs.json').effectiveDate"))"
+          git push
+
+      - name: Deploy to Appwrite
+        if: steps.scrape.outputs.changed == 'true'
+        env:
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+        run: |
+          npx --yes appwrite-cli client \
+            --endpoint https://fra.cloud.appwrite.io/v1 \
+            --project-id voltzw \
+            --key "$APPWRITE_API_KEY"
+          npx --yes appwrite-cli sites create-deployment \
+            --site-id voltzw-web --code . --activate true
