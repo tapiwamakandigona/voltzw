@@ -86,3 +86,9 @@ export function zwgToUsd(zwg: number): number {
 export function fmt(n: number, dp = 2): string {
   return n.toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp });
 }
+
+export const RATE = tariffs.zwgPerUsdApprox;
+
+export function usdToZwg(usd: number): number {
+  return usd * tariffs.zwgPerUsdApprox;
+}

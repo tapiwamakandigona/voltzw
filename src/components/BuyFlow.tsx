@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { unitsForAmount, fmt } from "@/lib/tariff";
 
 const API = "https://voltzw-vend.appwrite.network";
@@ -107,7 +108,7 @@ export default function BuyFlow() {
         </p>
         <p className="mt-4 text-sm">
           Meanwhile, try the{" "}
-          <a href="/" className="font-medium text-volt-deep underline">free calculator</a>{" "}
+          <Link href="/" className="font-medium text-volt-deep underline">free calculator</Link>{" "}
           to plan your purchase.
         </p>
       </div>
