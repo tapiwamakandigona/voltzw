@@ -22,6 +22,8 @@ function formatToken(t: string) {
 export default function TokenStatus() {
   const [state, setState] = useState<StatusResp | null>(null);
   const [noRef, setNoRef] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
   const [copied, setCopied] = useState(false);
   const tries = useRef(0);
 
@@ -38,11 +40,13 @@ export default function TokenStatus() {
       tries.current += 1;
       try {
         const res = await fetch(`${API}/status?ref=${encodeURIComponent(ref!)}`);
+        if (res.status === 404) { setNotFound(true); return; }
         const data = (await res.json()) as StatusResp;
         setState(data);
         if (data.status === "delivered" || data.status === "vend_failed" || data.status === "cancelled") return;
       } catch { /* retry */ }
       if (tries.current < 60) setTimeout(poll, 5000);
+      else setTimedOut(true);
     }
     poll();
     return () => { stop = true; };
@@ -64,6 +68,34 @@ export default function TokenStatus() {
         <p className="mt-2 text-sm text-dim">
           Start a purchase from the <Link href="/buy/" className="text-volt-deep underline">buy page</Link>.
         </p>
+      </div>
+    );
+  }
+
+  if (notFound) {
+    return (
+      <div className="rounded-xl border border-line bg-card p-8 text-center">
+        <p className="font-display text-lg font-semibold">Purchase not found</p>
+        <p className="mt-2 text-sm text-dim">
+          We couldn&apos;t find a purchase with that reference. Check the link from your
+          payment, or start a new purchase from the <Link href="/buy/" className="text-volt-deep underline">buy page</Link>.
+        </p>
+      </div>
+    );
+  }
+
+  if (timedOut) {
+    return (
+      <div className="rounded-xl border border-line bg-card p-8 text-center">
+        <p className="font-display text-lg font-semibold">This is taking longer than usual</p>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-dim">
+          Your payment may still be processing. Refresh this page in a few minutes — if you
+          paid, your token will also arrive by SMS. If nothing arrives, contact us with your
+          payment reference and we&apos;ll sort it out.
+        </p>
+        <button onClick={() => window.location.reload()} className="mt-5 rounded-lg bg-ink px-6 py-2.5 font-display font-semibold text-white transition hover:bg-ink/85">
+          Refresh now
+        </button>
       </div>
     );
   }

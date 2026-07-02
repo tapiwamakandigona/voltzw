@@ -7,7 +7,9 @@ const HR_BASE = "https://ssl.hot.co.zw/api/v1/";
 const PAYNOW_INITIATE = "https://www.paynow.co.zw/interface/initiatetransaction";
 const DB_ID = "voltdb";
 const TABLE = "transactions";
+const LOCKS = "vend_locks";
 const SITE = process.env.SITE_URL || "https://zesa.tapiwa.me";
+const LOCK_STALE_MS = 120_000; // consider a vend attempt dead after 2 min
 
 const CURRENCIES = {
   USD: { id: process.env.PAYNOW_ID_USD, key: process.env.PAYNOW_KEY_USD },
@@ -23,23 +25,42 @@ function isConfigured() {
   );
 }
 
+/* ---------------- Alerts (optional webhook) ---------------- */
+
+async function alert(text) {
+  const url = process.env.ALERT_URL;
+  if (!url) return;
+  try {
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: `[VoltZW] ${text}` }),
+    });
+  } catch { /* never let alerting break the flow */ }
+}
+
 /* ---------------- Hot Recharge ---------------- */
 
-function hrHeaders() {
+function hrHeaders(agentReference) {
   return {
     "Content-Type": "application/json",
     "x-access-code": process.env.HR_ACCESS_CODE,
     "x-access-password": process.env.HR_ACCESS_PASSWORD,
-    "x-agent-reference": crypto.randomUUID().replaceAll("-", "").slice(0, 24),
+    "x-agent-reference": agentReference || crypto.randomUUID().replaceAll("-", "").slice(0, 24),
   };
 }
 
-async function hrPost(path, body) {
+async function hrPost(path, body, agentReference) {
   const res = await fetch(HR_BASE + path, {
     method: "POST",
-    headers: hrHeaders(),
+    headers: hrHeaders(agentReference),
     body: JSON.stringify(body),
   });
+  return res.json();
+}
+
+async function hrGet(path) {
+  const res = await fetch(HR_BASE + path, { method: "GET", headers: hrHeaders() });
   return res.json();
 }
 
@@ -47,12 +68,17 @@ async function hrCheckMeter(meter) {
   return hrPost("agents/check-customer-zesa", { MeterNumber: meter });
 }
 
-async function hrVend(amount, meter, notifyPhone) {
+async function hrVend(amount, meter, notifyPhone, agentReference) {
   return hrPost("agents/recharge-zesa", {
     Amount: amount,
     meterNumber: meter,
     TargetNumber: notifyPhone,
-  });
+  }, agentReference);
+}
+
+// ZESA vends can land in "pending verification" (ReplyCode 4). Query by RechargeId.
+async function hrQueryZesa(rechargeId) {
+  return hrPost("agents/query-zesa-transaction", { RechargeId: rechargeId });
 }
 
 /* ---------------- Paynow ---------------- */
@@ -95,6 +121,122 @@ async function paynowPoll(pollUrl) {
   return parseUrlEncoded(await res.text());
 }
 
+/* ---------------- Helpers ---------------- */
+
+// Accept 07XXXXXXXX, +2637XXXXXXXX, 002637XXXXXXXX, 2637XXXXXXXX (spaces/dashes ok).
+function normalizePhone(raw) {
+  const p = String(raw || "").replace(/[\s\-().]/g, "");
+  let m = p.match(/^(?:\+|00)?263(7\d{8})$/);
+  if (m) return "0" + m[1];
+  if (/^07\d{8}$/.test(p)) return p;
+  return null;
+}
+
+function makeRef() {
+  // 12 hex chars of real randomness (2^48) — refs gate token retrieval, keep them unguessable.
+  return "VZ" + crypto.randomBytes(6).toString("hex").toUpperCase();
+}
+
+// The Hot Recharge ZESA wallet is single-currency (payload has no currency field).
+// If the payment currency differs from the wallet currency, convert using the
+// same live FX approximation the site publishes.
+async function toVendAmount(amount, txCurrency, log) {
+  const wallet = (process.env.HR_WALLET_CURRENCY || "").toUpperCase();
+  if (!wallet || wallet === txCurrency) {
+    if (!wallet) log(`HR_WALLET_CURRENCY not set — vending ${txCurrency} amount as-is`);
+    return amount;
+  }
+  const res = await fetch(`${SITE}/api/tariffs.json`);
+  const t = await res.json();
+  const rate = Number(t.zwgPerUsdApprox);
+  if (!(rate > 0)) throw new Error("Cannot convert vend amount: bad FX rate");
+  const converted = txCurrency === "USD" && wallet === "ZWG"
+    ? amount * rate
+    : txCurrency === "ZWG" && wallet === "USD"
+      ? amount / rate
+      : amount;
+  return Math.round(converted * 100) / 100;
+}
+
+/* ---------------- Vend (atomic, retryable) ---------------- */
+
+// Lock via createRow with a fixed row ID — the second concurrent creator gets a
+// conflict, which makes this safe against the /status + /result race.
+async function acquireLock(db, ref) {
+  const rowId = ref.toLowerCase();
+  try {
+    await db.createRow(DB_ID, LOCKS, rowId, { ref });
+    return true;
+  } catch {
+    try {
+      const row = await db.getRow(DB_ID, LOCKS, rowId);
+      if (Date.now() - new Date(row.$createdAt).getTime() > LOCK_STALE_MS) {
+        await db.deleteRow(DB_ID, LOCKS, rowId);
+        await db.createRow(DB_ID, LOCKS, rowId, { ref });
+        return true; // previous attempt died — take over
+      }
+    } catch { /* fall through */ }
+    return false;
+  }
+}
+
+async function releaseLock(db, ref) {
+  try { await db.deleteRow(DB_ID, LOCKS, ref.toLowerCase()); } catch { /* ok */ }
+}
+
+async function finalizeVend(db, tx, vr, json, error) {
+  if (vr.ReplyCode === 2 || vr.ReplyCode === "2") {
+    const t = vr.Tokens?.[0] || {};
+    await db.updateRow(DB_ID, TABLE, tx.$id, {
+      status: "delivered",
+      token: String(t.Token || ""),
+      units: Number(t.Units || 0),
+    });
+    await releaseLock(db, tx.ref);
+    return json({ ok: true, status: "delivered", token: String(t.Token || ""), units: Number(t.Units || 0), meter: tx.meter });
+  }
+  if (vr.ReplyCode === 4 || vr.ReplyCode === "4") {
+    // Pending on ZETDC's side — keep polling via query-zesa-transaction. Never re-vend.
+    await db.updateRow(DB_ID, TABLE, tx.$id, {
+      status: "vend_pending",
+      hrRef: String(vr.RechargeId ?? vr.RechargeID ?? tx.hrRef ?? ""),
+    });
+    await releaseLock(db, tx.ref);
+    return json({ ok: true, status: "processing" });
+  }
+  await db.updateRow(DB_ID, TABLE, tx.$id, {
+    status: "vend_failed",
+    lastError: String(vr.ReplyMsg || "vend error").slice(0, 1000),
+  });
+  await releaseLock(db, tx.ref);
+  error(`vend failed ref=${tx.ref}: ${vr.ReplyMsg}`);
+  await alert(`VEND FAILED ref=${tx.ref} meter=${tx.meter} ${tx.currency} ${tx.amount}: ${vr.ReplyMsg}`);
+  return json({ ok: true, status: "vend_failed", meter: tx.meter });
+}
+
+async function attemptVend(db, tx, json, log, error) {
+  if (!(await acquireLock(db, tx.ref))) {
+    return json({ ok: true, status: "processing" }); // someone else is vending right now
+  }
+  // Stable agent reference per transaction: retries reuse it so Hot Recharge can
+  // deduplicate instead of double-vending.
+  const agentRef = tx.hrRef || crypto.randomUUID().replaceAll("-", "").slice(0, 24);
+  await db.updateRow(DB_ID, TABLE, tx.$id, { status: "paid_vending", hrRef: agentRef });
+  let vr;
+  try {
+    const vendAmount = await toVendAmount(tx.amount, tx.currency, log);
+    log(`vend ref=${tx.ref} paid=${tx.currency} ${tx.amount} vendAmount=${vendAmount}`);
+    vr = await hrVend(vendAmount, tx.meter, tx.phone, agentRef);
+  } catch (e) {
+    // Network/timeout mid-vend: leave lock (it goes stale in 2 min) so a later
+    // poll retries with the SAME agentRef instead of stranding the customer.
+    error(`vend attempt errored ref=${tx.ref}: ${e}`);
+    await alert(`VEND ATTEMPT ERRORED ref=${tx.ref} (will auto-retry): ${e}`);
+    return json({ ok: true, status: "processing" });
+  }
+  return finalizeVend(db, tx, vr, json, error);
+}
+
 /* ---------------- Handler ---------------- */
 
 export default async ({ req, res, log, error }) => {
@@ -120,11 +262,23 @@ export default async ({ req, res, log, error }) => {
       return json({ ok: true, configured: isConfigured() });
     }
 
+    /* ---- admin: wallet balances (requires ADMIN_KEY) ---- */
+    if (path === "/wallet") {
+      if (!process.env.ADMIN_KEY || req.headers["x-admin-key"] !== process.env.ADMIN_KEY) {
+        return json({ ok: false, error: "Not found." }, 404);
+      }
+      const [zesa, main] = await Promise.all([
+        hrGet("agents/wallet-balance-zesa"),
+        hrGet("agents/wallet-balance"),
+      ]);
+      return json({ ok: true, zesa, main });
+    }
+
     /* ---- meter lookup ---- */
     if (path === "/check-meter" && req.method === "POST") {
       const { meter } = req.bodyJson || {};
       if (!/^\d{9,13}$/.test(meter || "")) {
-        return json({ ok: false, error: "Enter a valid meter number (11 digits)." }, 400);
+        return json({ ok: false, error: "Enter a valid meter number (9–13 digits)." }, 400);
       }
       const r = await hrCheckMeter(meter);
       if (r.ReplyCode === 2 || r.ReplyCode === "2") {
@@ -150,13 +304,14 @@ export default async ({ req, res, log, error }) => {
       if (!/^\d{9,13}$/.test(meter || "")) return json({ ok: false, error: "Invalid meter number." }, 400);
       if (!CURRENCIES[currency]) return json({ ok: false, error: "Invalid currency." }, 400);
       if (!(amt > 0) || amt > 10000) return json({ ok: false, error: "Invalid amount." }, 400);
-      if (!/^07\d{8}$/.test(phone || "")) return json({ ok: false, error: "Enter a valid Zimbabwe mobile (07…)." }, 400);
+      const normPhone = normalizePhone(phone);
+      if (!normPhone) return json({ ok: false, error: "Enter a valid Zimbabwe mobile (07… or +2637…)." }, 400);
 
-      const ref = "VZ" + Date.now().toString(36).toUpperCase() + crypto.randomBytes(2).toString("hex").toUpperCase();
+      const ref = makeRef();
       const pay = await paynowInitiate({ ref, amount: amt, currency, email });
       await db.createRow(DB_ID, TABLE, ID.unique(), {
         ref, meter, amount: amt, currency,
-        phone, email: email || "", customerName: customerName || "",
+        phone: normPhone, email: email || "", customerName: customerName || "",
         status: "pending", pollUrl: pay.pollUrl,
       });
       return json({ ok: true, ref, redirectUrl: pay.browserUrl });
@@ -167,7 +322,7 @@ export default async ({ req, res, log, error }) => {
       const ref = req.query?.ref;
       if (!ref) return json({ ok: false, error: "Missing ref." }, 400);
       const rows = await db.listRows(DB_ID, TABLE, [Query.equal("ref", ref)]);
-      if (rows.total === 0) return json({ ok: false, error: "Transaction not found." }, 404);
+      if (rows.total === 0) return json({ ok: false, status: "not_found", error: "Transaction not found." }, 404);
       const tx = rows.rows[0];
 
       if (tx.status === "delivered") {
@@ -176,35 +331,30 @@ export default async ({ req, res, log, error }) => {
       if (tx.status === "vend_failed") {
         return json({ ok: true, status: "vend_failed", meter: tx.meter });
       }
+      if (tx.status === "cancelled") {
+        return json({ ok: true, status: "cancelled" });
+      }
+
+      // ZETDC-side pending vend: query, never re-vend.
+      if (tx.status === "vend_pending" && tx.hrRef) {
+        const qr = await hrQueryZesa(tx.hrRef);
+        if (qr.ReplyCode === 2 || qr.ReplyCode === "2") {
+          return finalizeVend(db, tx, qr, json, error);
+        }
+        return json({ ok: true, status: "processing" });
+      }
+
+      // Paid, but a previous vend attempt died mid-flight — retry (lock gates it).
+      if (tx.status === "paid_vending") {
+        return attemptVend(db, tx, json, log, error);
+      }
 
       const pn = await paynowPoll(tx.pollUrl);
       const pnStatus = (pn.status || "").toLowerCase();
       log(`ref=${ref} paynow=${pnStatus}`);
 
       if (pnStatus === "paid" || pnStatus === "awaiting delivery") {
-        // guard against double-vend
-        if (tx.status !== "paid_vending") {
-          await db.updateRow(DB_ID, TABLE, tx.$id, { status: "paid_vending" });
-          const vendAmount = tx.currency === "USD" ? tx.amount : tx.amount;
-          const vr = await hrVend(vendAmount, tx.meter, tx.phone);
-          if (vr.ReplyCode === 2 || vr.ReplyCode === "2") {
-            const t = vr.Tokens?.[0] || {};
-            await db.updateRow(DB_ID, TABLE, tx.$id, {
-              status: "delivered",
-              token: String(t.Token || ""),
-              units: Number(t.Units || 0),
-              hrRef: String(vr.AgentReference || ""),
-            });
-            return json({ ok: true, status: "delivered", token: String(t.Token || ""), units: Number(t.Units || 0), meter: tx.meter });
-          }
-          await db.updateRow(DB_ID, TABLE, tx.$id, {
-            status: "vend_failed",
-            lastError: String(vr.ReplyMsg || "vend error").slice(0, 1000),
-          });
-          error(`vend failed ref=${ref}: ${vr.ReplyMsg}`);
-          return json({ ok: true, status: "vend_failed", meter: tx.meter });
-        }
-        return json({ ok: true, status: "processing" });
+        return attemptVend(db, tx, json, log, error);
       }
 
       if (pnStatus === "cancelled" || pnStatus === "failed") {
