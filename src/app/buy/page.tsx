@@ -14,7 +14,10 @@ export const metadata: Metadata = {
 export default function BuyPage() {
   return (
     <div className="container-page py-10 sm:py-14">
-      <div className="mx-auto max-w-xl">
+      {/* Desktop: the three step-cards sit beside the form instead of
+          leaving dead whitespace either side of a lone centered column. */}
+      <div className="mx-auto max-w-xl lg:grid lg:max-w-4xl lg:grid-cols-[minmax(0,1fr)_15rem] lg:items-start lg:gap-12">
+        <div>
         <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
           Buy ZESA tokens<span className="text-volt-deep">.</span>
         </h1>
@@ -35,7 +38,8 @@ export default function BuyPage() {
         <div className="mt-8">
           <BuyFlow />
         </div>
-        <div className="mt-10 grid gap-4 text-sm sm:grid-cols-3">
+        </div>
+        <div className="mt-10 grid gap-4 text-sm sm:grid-cols-3 lg:mt-0 lg:grid-cols-1">
           <div className="rounded-lg border border-line bg-card p-4">
             <p className="font-display font-semibold">1. Verify</p>
             <p className="mt-1 text-dim">We confirm the registered name on your meter before you pay.</p>

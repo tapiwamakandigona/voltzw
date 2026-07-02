@@ -37,11 +37,12 @@ function Header() {
         <Link href="/" className="font-display text-lg font-bold tracking-tight">
           <span className="bg-volt px-1.5 py-0.5 mr-0.5">Volt</span>ZW
         </Link>
+        {/* min-h-11 (44px) hit areas — WCAG 2.5.8 / mobile touch targets */}
         <nav className="flex items-center gap-3 text-[13px] font-medium sm:gap-6 sm:text-sm">
-          <Link href="/" className="hover:text-volt-deep"><span className="sm:hidden">Calc</span><span className="hidden sm:inline">Calculator</span></Link>
-          <Link href="/zesa-tariffs/" className="hover:text-volt-deep">Tariffs</Link>
-          <Link href="/retrieve-zesa-token/" className="hover:text-volt-deep"><span className="sm:hidden">Retrieve</span><span className="hidden sm:inline">Retrieve token</span></Link>
-          <Link href="/buy/" className="whitespace-nowrap rounded-md bg-volt px-2.5 py-1.5 font-semibold text-ink transition hover:bg-volt-deep hover:text-white sm:px-3"><span className="sm:hidden">Buy</span><span className="hidden sm:inline">Buy tokens</span></Link>
+          <Link href="/" className="inline-flex min-h-11 items-center hover:text-volt-deep"><span className="sm:hidden">Calc</span><span className="hidden sm:inline">Calculator</span></Link>
+          <Link href="/zesa-tariffs/" className="inline-flex min-h-11 items-center hover:text-volt-deep">Tariffs</Link>
+          <Link href="/retrieve-zesa-token/" className="inline-flex min-h-11 items-center hover:text-volt-deep"><span className="sm:hidden">Retrieve</span><span className="hidden sm:inline">Retrieve token</span></Link>
+          <Link href="/buy/" className="inline-flex min-h-11 items-center whitespace-nowrap rounded-md bg-volt px-2.5 font-semibold text-ink transition hover:bg-volt-deep hover:text-white sm:px-3"><span className="sm:hidden">Buy</span><span className="hidden sm:inline">Buy tokens</span></Link>
         </nav>
       </div>
     </header>
@@ -63,11 +64,12 @@ function Footer() {
         </div>
         <div className="text-sm">
           <p className="font-semibold text-white">Tools</p>
-          <ul className="mt-3 space-y-2">
-            <li><Link href="/buy/" className="hover:text-volt">Buy ZESA tokens</Link></li>
-            <li><Link href="/" className="hover:text-volt">ZESA calculator</Link></li>
-            <li><Link href="/zesa-tariffs/" className="hover:text-volt">Current ZESA tariffs</Link></li>
-            <li><Link href="/retrieve-zesa-token/" className="hover:text-volt">Retrieve a lost token</Link></li>
+          {/* 44px rows for touch targets — spacing comes from the row height */}
+          <ul className="mt-1">
+            <li><Link href="/buy/" className="inline-flex min-h-11 items-center hover:text-volt">Buy ZESA tokens</Link></li>
+            <li><Link href="/" className="inline-flex min-h-11 items-center hover:text-volt">ZESA calculator</Link></li>
+            <li><Link href="/zesa-tariffs/" className="inline-flex min-h-11 items-center hover:text-volt">Current ZESA tariffs</Link></li>
+            <li><Link href="/retrieve-zesa-token/" className="inline-flex min-h-11 items-center hover:text-volt">Retrieve a lost token</Link></li>
           </ul>
         </div>
         <div className="text-sm">
@@ -76,8 +78,8 @@ function Footer() {
             VoltZW is an independent tool and is not affiliated with ZESA Holdings or ZETDC.
             Tariff data is checked against ZERA-approved rates.
           </p>
-          <p className="mt-3">
-            <a href="mailto:silentics.org@gmail.com" className="underline hover:text-volt">Contact</a>
+          <p className="mt-1">
+            <a href="mailto:silentics.org@gmail.com" className="inline-flex min-h-11 items-center underline hover:text-volt">Contact</a>
           </p>
         </div>
       </div>

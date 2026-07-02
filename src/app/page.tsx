@@ -70,7 +70,11 @@ export default function Home() {
         <div className="container-page py-12 sm:py-16">
           <p className="text-xs font-semibold uppercase tracking-widest text-volt">Free · No login · Live tariffs</p>
           <h1 className="font-display mt-3 max-w-2xl text-4xl font-bold leading-tight sm:text-5xl">
-            ZESA calculator with the <span className="text-volt">real stepped tariffs</span>
+            ZESA calculator with the{" "}
+            {/* Art-directed break: the yellow phrase gets its own line on
+                desktop instead of wrapping mid-phrase. */}
+            <br className="hidden lg:block" />
+            <span className="text-volt">real stepped tariffs</span>
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-white/70">
             See exactly how many units your money buys — band by band, including the 6% REA levy and your
