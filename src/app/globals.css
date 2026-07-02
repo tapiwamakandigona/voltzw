@@ -5,7 +5,9 @@
   --paper: #f7f6f3;
   --card: #ffffff;
   --volt: #f5b800;
-  --volt-deep: #c79200;
+  /* Darkened from #c79200 so text-volt-deep passes WCAG AA on white/paper
+     (5.3:1 on #fff, 4.9:1 on #f7f6f3, 4.8:1 on the volt/15 tint). */
+  --volt-deep: #8a6600;
   --line: rgba(22, 24, 29, 0.12);
   --dim: rgba(22, 24, 29, 0.6);
 }
@@ -23,6 +25,18 @@
 }
 
 html { scroll-behavior: smooth; }
+
+/* Visible keyboard focus indicator on all interactive controls (WCAG 2.4.7).
+   volt-deep keeps ≥3:1 non-text contrast on paper/card backgrounds. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--volt-deep);
+  outline-offset: 2px;
+}
+
 body {
   background: var(--paper);
   color: var(--ink);
