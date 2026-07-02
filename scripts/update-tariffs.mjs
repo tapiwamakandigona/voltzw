@@ -32,14 +32,48 @@ function fail(msg) {
   process.exit(1);
 }
 
-const html = await (await fetch(SOURCE, { headers: UA })).text();
-const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+// The WP REST API endpoint is friendlier to CI/datacenter IPs than the HTML
+// page (which sits behind bot protection), so try it first.
+const REST_SOURCE = "https://zimpricecheck.com/wp-json/wp/v2/price_updates/9870?_fields=content";
 
-const scraped = BANDS.map((re, i) => {
-  const m = text.match(re);
-  if (!m) fail(`could not parse band ${i + 1}`);
-  return { baseZwg: +m[1], inclLevyZwg: +m[2], usdApprox: +m[3] };
-});
+async function fetchText(label, url, extract) {
+  try {
+    const res = await fetch(url, { headers: UA });
+    const raw = await res.text();
+    if (!res.ok) {
+      console.error(`tariff-sync: ${label} HTTP ${res.status} (${raw.length} bytes)`);
+      return null;
+    }
+    const html = extract ? extract(raw) : raw;
+    return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+  } catch (e) {
+    console.error(`tariff-sync: ${label} fetch failed: ${e.message}`);
+    return null;
+  }
+}
+
+function parseBands(text) {
+  if (!text) return null;
+  const out = [];
+  for (let i = 0; i < BANDS.length; i++) {
+    const m = text.match(BANDS[i]);
+    if (!m) {
+      console.error(`tariff-sync: could not parse band ${i + 1} (text ${text.length} chars)`);
+      return null;
+    }
+    out.push({ baseZwg: +m[1], inclLevyZwg: +m[2], usdApprox: +m[3] });
+  }
+  return out;
+}
+
+let text = await fetchText("wp-rest", REST_SOURCE, (raw) => JSON.parse(raw).content.rendered);
+let scraped = parseBands(text);
+if (!scraped) {
+  console.error("tariff-sync: falling back to HTML page");
+  text = await fetchText("html", SOURCE);
+  scraped = parseBands(text);
+}
+if (!scraped) fail("all sources failed");
 
 const em = text.match(EFFECTIVE);
 if (!em) fail("could not parse effective date");
