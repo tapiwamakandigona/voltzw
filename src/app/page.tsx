@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Calculator from "@/components/Calculator";
-import { TARIFFS } from "@/lib/tariff";
+import { TARIFFS, MONTHLY_QUOTA, remainingQuota, zwgToUsd, fmt } from "@/lib/tariff";
 
 export const metadata: Metadata = {
   title: "Free ZESA Calculator — Convert Money to Units with Current Tariffs",
@@ -9,6 +9,13 @@ export const metadata: Metadata = {
     "Free ZESA token calculator for Zimbabwe. See exactly how many units (kWh) your money buys with the current ZETDC stepped tariffs, including the 6% REA levy and your 400 kWh monthly quota.",
   alternates: { canonical: "/" },
 };
+
+// Cost of the full monthly quota, computed at build time from the same
+// tariffs.json the calculator uses — the daily tariff sync can never make
+// this copy (or the FAQPage JSON-LD below) go stale again.
+const fullQuotaZwg = remainingQuota(0).costZwg;
+const quotaCostZwg = fmt(fullQuotaZwg);
+const quotaCostUsd = fmt(zwgToUsd(fullQuotaZwg));
 
 const faqs = [
   {
@@ -21,7 +28,7 @@ const faqs = [
   },
   {
     q: "What is the 400 kWh monthly quota?",
-    a: "Every prepaid meter gets 400 kWh per calendar month at discounted stepped rates — roughly ZWG 2,030 (about US$79) buys the full quota. Every unit above 400 kWh in the same month is charged at the top rate. The quota resets on the 1st of each month.",
+    a: `Every prepaid meter gets ${MONTHLY_QUOTA} kWh per calendar month at discounted stepped rates — ZWG ${quotaCostZwg} (about US$${quotaCostUsd}) buys the full quota at current rates. Every unit above ${MONTHLY_QUOTA} kWh in the same month is charged at the top rate. The quota resets on the 1st of each month.`,
   },
   {
     q: "How do I check my ZESA balance online?",
