@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import BuyFlow from "@/components/BuyFlow";
 
+// Build-time payment mode (static export) — keep in sync with BuyFlow.tsx.
+const PAYMENT_MODE = process.env.NEXT_PUBLIC_PAYMENT_MODE || "coming_soon";
+
 export const metadata: Metadata = {
   title: "Buy ZESA Tokens Online — EcoCash, Zimswitch, USD & ZWG",
   description:
@@ -16,9 +19,18 @@ export default function BuyPage() {
           Buy ZESA tokens<span className="text-volt-deep">.</span>
         </h1>
         <p className="mt-3 text-dim">
-          Verify your meter, pay with EcoCash, Zimswitch or your bank — in{" "}
-          <strong className="text-ink">USD or ZWG</strong> — and get your token on screen
-          and by SMS. No queues, no airtime hassle.
+          {PAYMENT_MODE === "semi_auto" ? (
+            <>
+              Verify your meter, pay by <strong className="text-ink">EcoCash</strong> from your
+              own phone, and get your token on screen and by SMS. No queues, no airtime hassle.
+            </>
+          ) : (
+            <>
+              Verify your meter, pay with EcoCash, Zimswitch or your bank — in{" "}
+              <strong className="text-ink">USD or ZWG</strong> — and get your token on screen
+              and by SMS. No queues, no airtime hassle.
+            </>
+          )}
         </p>
         <div className="mt-8">
           <BuyFlow />
@@ -30,7 +42,11 @@ export default function BuyPage() {
           </div>
           <div className="rounded-lg border border-line bg-card p-4">
             <p className="font-display font-semibold">2. Pay securely</p>
-            <p className="mt-1 text-dim">Checkout happens on Paynow — we never see your PIN or card.</p>
+            <p className="mt-1 text-dim">
+              {PAYMENT_MODE === "semi_auto"
+                ? "Pay by EcoCash from your own phone — we never see your PIN."
+                : "Checkout happens on Paynow — we never see your PIN or card."}
+            </p>
           </div>
           <div className="rounded-lg border border-line bg-card p-4">
             <p className="font-display font-semibold">3. Get your token</p>
