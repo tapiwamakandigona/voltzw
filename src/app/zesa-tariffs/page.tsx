@@ -115,6 +115,15 @@ export default function TariffsPage() {
               to see your exact price before you pay.
             </p>
           </div>
+          <div className="mt-5 rounded-lg border border-line bg-white p-4 text-sm leading-relaxed">
+            <p className="font-semibold">🛠 For developers</p>
+            <p className="mt-1">
+              These tariffs are available as a free JSON API — we track ZERA rate changes and keep it current:{" "}
+              <a href="/api/tariffs.json" className="font-mono text-xs font-semibold underline">
+                zesa.tapiwa.me/api/tariffs.json
+              </a>
+            </p>
+          </div>
         </div>
       </section>
 
