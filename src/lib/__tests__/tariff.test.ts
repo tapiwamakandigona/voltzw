@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { costForUnits, unitsForAmount, remainingQuota, BANDS, MONTHLY_QUOTA } from "../tariff";
+import { costForUnits, unitsForAmount, remainingQuota, BANDS, MONTHLY_QUOTA, MAX_INPUT } from "../tariff";
 
 const r1 = BANDS[0].inclLevyZwg; // first band rate incl levy
 const r2 = BANDS[1].inclLevyZwg;
@@ -65,5 +65,30 @@ describe("remainingQuota", () => {
     expect(remainingQuota(0).units).toBe(MONTHLY_QUOTA);
     expect(remainingQuota(150).units).toBe(MONTHLY_QUOTA - 150);
     expect(remainingQuota(MONTHLY_QUOTA + 50).units).toBe(0);
+  });
+});
+
+describe("non-finite and oversized input sanitization", () => {
+  it("treats NaN and Infinity as zero", () => {
+    expect(costForUnits(NaN).totalZwg).toBe(0);
+    expect(costForUnits(Infinity, NaN).totalZwg).toBe(0);
+    expect(unitsForAmount(NaN).totalUnits).toBe(0);
+    expect(unitsForAmount(Infinity).totalUnits).toBe(0);
+    expect(remainingQuota(NaN).units).toBe(MONTHLY_QUOTA);
+  });
+
+  it("never returns Infinity for huge budgets (1e400 → Infinity input)", () => {
+    const r = unitsForAmount(parseFloat("1e400"), 0);
+    expect(Number.isFinite(r.totalUnits)).toBe(true);
+  });
+
+  it("clamps inputs above MAX_INPUT instead of overflowing", () => {
+    const capped = unitsForAmount(MAX_INPUT, 0).totalUnits;
+    expect(unitsForAmount(MAX_INPUT * 10, 0).totalUnits).toBe(capped);
+    expect(Number.isFinite(costForUnits(MAX_INPUT * 10, 0).totalZwg)).toBe(true);
+  });
+
+  it("ignores non-finite alreadyBought", () => {
+    expect(costForUnits(50, Infinity).totalZwg).toBeCloseTo(costForUnits(50, 0).totalZwg, 6);
   });
 });
