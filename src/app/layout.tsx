@@ -40,7 +40,8 @@ function Header() {
         <nav className="flex items-center gap-4 text-sm font-medium sm:gap-6">
           <Link href="/" className="hover:text-volt-deep">Calculator</Link>
           <Link href="/zesa-tariffs/" className="hover:text-volt-deep">Tariffs</Link>
-          <Link href="/retrieve-zesa-token/" className="hover:text-volt-deep">Retrieve token</Link>
+          <Link href="/retrieve-zesa-token/" className="hover:text-volt-deep hidden sm:inline">Retrieve token</Link>
+          <Link href="/buy/" className="rounded-md bg-volt px-3 py-1.5 font-semibold text-ink transition hover:bg-volt-deep hover:text-white">Buy tokens</Link>
         </nav>
       </div>
     </header>
@@ -57,12 +58,13 @@ function Footer() {
           </p>
           <p className="mt-3 text-sm leading-relaxed">
             The fastest, smartest way to manage prepaid electricity in Zimbabwe.
-            Token purchases are coming soon — calculator, tariffs and retrieval help are free, forever.
+            Buy tokens with EcoCash, Zimswitch or bank in USD or ZWG — calculator, tariffs and retrieval help are free, forever.
           </p>
         </div>
         <div className="text-sm">
           <p className="font-semibold text-white">Tools</p>
           <ul className="mt-3 space-y-2">
+            <li><Link href="/buy/" className="hover:text-volt">Buy ZESA tokens</Link></li>
             <li><Link href="/" className="hover:text-volt">ZESA calculator</Link></li>
             <li><Link href="/zesa-tariffs/" className="hover:text-volt">Current ZESA tariffs</Link></li>
             <li><Link href="/retrieve-zesa-token/" className="hover:text-volt">Retrieve a lost token</Link></li>

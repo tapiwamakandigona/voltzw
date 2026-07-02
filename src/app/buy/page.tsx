@@ -1,0 +1,43 @@
+import type { Metadata } from "next";
+import BuyFlow from "@/components/BuyFlow";
+
+export const metadata: Metadata = {
+  title: "Buy ZESA Tokens Online — EcoCash, Zimswitch, USD & ZWG",
+  description:
+    "Buy prepaid ZESA electricity tokens online in minutes. Pay with EcoCash, Zimswitch, InnBucks or bank — in US dollars or ZWG. Token delivered instantly on screen and by SMS.",
+  alternates: { canonical: "/buy/" },
+};
+
+export default function BuyPage() {
+  return (
+    <div className="container-page py-10 sm:py-14">
+      <div className="mx-auto max-w-xl">
+        <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+          Buy ZESA tokens<span className="text-volt-deep">.</span>
+        </h1>
+        <p className="mt-3 text-dim">
+          Verify your meter, pay with EcoCash, Zimswitch or your bank — in{" "}
+          <strong className="text-ink">USD or ZWG</strong> — and get your token on screen
+          and by SMS. No queues, no airtime hassle.
+        </p>
+        <div className="mt-8">
+          <BuyFlow />
+        </div>
+        <div className="mt-10 grid gap-4 text-sm sm:grid-cols-3">
+          <div className="rounded-lg border border-line bg-card p-4">
+            <p className="font-display font-semibold">1. Verify</p>
+            <p className="mt-1 text-dim">We confirm the registered name on your meter before you pay.</p>
+          </div>
+          <div className="rounded-lg border border-line bg-card p-4">
+            <p className="font-display font-semibold">2. Pay securely</p>
+            <p className="mt-1 text-dim">Checkout happens on Paynow — we never see your PIN or card.</p>
+          </div>
+          <div className="rounded-lg border border-line bg-card p-4">
+            <p className="font-display font-semibold">3. Get your token</p>
+            <p className="mt-1 text-dim">Delivered instantly on screen and by SMS to your phone.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
