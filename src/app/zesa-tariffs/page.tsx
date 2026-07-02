@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { TARIFFS, BANDS, costForUnits, fmt, zwgToUsd } from "@/lib/tariff";
+import { BulbIcon, WrenchIcon } from "@/components/icons";
 
 export const metadata: Metadata = {
   title: "Current ZESA Tariffs — ZETDC Stepped Tariff Bands Explained",
@@ -107,7 +108,7 @@ export default function TariffsPage() {
             </table>
           </div>
           <div className="mt-5 rounded-lg border border-volt/60 bg-volt/10 p-4 text-sm leading-relaxed">
-            <p className="font-semibold">💡 Money-saving rule of thumb</p>
+            <p className="font-semibold"><BulbIcon />Money-saving rule of thumb</p>
             <p className="mt-1">
               If your household uses more than 400 kWh a month, split large purchases across the month boundary: top up
               to your quota before the 1st, then buy the rest after the reset. Use the{" "}
@@ -116,7 +117,7 @@ export default function TariffsPage() {
             </p>
           </div>
           <div className="mt-5 rounded-lg border border-line bg-white p-4 text-sm leading-relaxed">
-            <p className="font-semibold">🛠 For developers</p>
+            <p className="font-semibold"><WrenchIcon />For developers</p>
             <p className="mt-1">
               These tariffs are available as a free JSON API — we track ZERA rate changes and keep it current:{" "}
               <a href="/api/tariffs.json" className="font-mono text-xs font-semibold underline">

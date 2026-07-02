@@ -5,6 +5,7 @@ import {
   costForUnits, unitsForAmount, remainingQuota, zwgToUsd, usdToZwg, fmt,
   MONTHLY_QUOTA, RATE, type BandSlice,
 } from "@/lib/tariff";
+import { BulbIcon } from "@/components/icons";
 
 type Mode = "money" | "units";
 type Currency = "ZWG" | "USD";
@@ -178,7 +179,7 @@ export default function Calculator() {
       <SliceTable slices={result.slices} currency={currency} />
 
       <div className="mt-5 rounded-lg border border-volt/60 bg-volt/10 p-4 text-sm leading-relaxed">
-        <p className="font-semibold">💡 Quota tip</p>
+        <p className="font-semibold"><BulbIcon />Quota tip</p>
         <p className="mt-1">
           You have used <strong>{fmt(quotaUsed, 0)} of {MONTHLY_QUOTA} kWh</strong> ({quotaPct}%) of this month&apos;s
           discounted quota. Buying your remaining <strong>{fmt(quota.units, 0)} discounted units</strong> before the
