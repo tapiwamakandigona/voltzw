@@ -40,7 +40,7 @@ function Header() {
         <nav className="flex items-center gap-4 text-sm font-medium sm:gap-6">
           <Link href="/" className="hover:text-volt-deep">Calculator</Link>
           <Link href="/zesa-tariffs/" className="hover:text-volt-deep">Tariffs</Link>
-          <Link href="/retrieve-zesa-token/" className="hover:text-volt-deep hidden sm:inline">Retrieve token</Link>
+          <Link href="/retrieve-zesa-token/" className="hover:text-volt-deep"><span className="sm:hidden">Retrieve</span><span className="hidden sm:inline">Retrieve token</span></Link>
           <Link href="/buy/" className="rounded-md bg-volt px-3 py-1.5 font-semibold text-ink transition hover:bg-volt-deep hover:text-white">Buy tokens</Link>
         </nav>
       </div>
