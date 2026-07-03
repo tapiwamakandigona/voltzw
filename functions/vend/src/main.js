@@ -832,14 +832,19 @@ const handler = async ({ req, res, log, error }) => {
       if (r.ReplyCode === 2 || r.ReplyCode === "2") {
         return json({
           ok: true,
+          found: true,
           customerName: (r.CustomerInfo?.CustomerName || r.AccountName || "").trim(),
           address: (r.CustomerInfo?.Address || r.Address || "").trim(),
         });
       }
+      // CONTRACT-1: a valid-format but unknown meter is NOT an error — it's a
+      // successful lookup with no result. 200 + found:false so the frontend
+      // can render it as guidance instead of a failure.
       return json({
-        ok: false,
-        error: r.ReplyMsg || "Meter not found. Double-check the number.",
-      }, 404);
+        ok: true,
+        found: false,
+        message: r.ReplyMsg || "Meter not found. Double-check the number.",
+      });
     }
 
     /* ---- launch waitlist (pre-launch interest capture) ---- */
