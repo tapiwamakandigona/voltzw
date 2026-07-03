@@ -49,7 +49,9 @@ export default function TokenStatus() {
       const t = setTimeout(() => setNoRef(true), 0);
       return () => clearTimeout(t);
     }
-    setRef(orderRef);
+    // Deferred like setNoRef above — the page is statically prerendered and
+    // the lint bans synchronous setState inside effects.
+    const refTimer = setTimeout(() => setRef(orderRef), 0);
 
     async function poll() {
       if (stop) return;
@@ -65,7 +67,7 @@ export default function TokenStatus() {
       else setTimedOut(true);
     }
     poll();
-    return () => { stop = true; };
+    return () => { stop = true; clearTimeout(refTimer); };
   }, []);
 
   async function copy() {
