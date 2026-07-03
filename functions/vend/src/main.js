@@ -578,15 +578,20 @@ async function vendOrder(db, order, log, error) {
 // Resume orders stuck in "vending" from a previous run.
 async function resumeVendingOrder(db, order, log, error) {
   if (order.hrQueryId) {
-    // Pending on ZETDC's side — query, never re-vend.
+    // Pending on ZETDC's side — query, never re-vend. Take the order lock
+    // first: completeOrder/failOrderNeedsAttention release it, and releasing
+    // a lock we never acquired could free a concurrent runner's lock.
+    if (!(await acquireLock(db, order.ref))) return 0; // another run is on it
     const qr = await hrQueryZesa(order.hrQueryId);
     const parsed = parseVendReply(qr);
     if (parsed.outcome === "delivered") {
       await completeOrder(db, order, parsed, error);
     } else if (parsed.outcome === "failed") {
       await failOrderNeedsAttention(db, order, `zesa query failed: ${parsed.detail}`, error);
+    } else {
+      // still pending → leave as-is, poll again next run
+      await releaseLock(db, order.ref);
     }
-    // still pending → leave as-is, poll again next run
     return 0;
   }
   // Vend attempt died mid-flight — retry with the stored agentRef (the vend
