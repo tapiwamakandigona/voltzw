@@ -18,7 +18,7 @@ type OrderResp = {
 
 type OrderStatusResp = {
   ok: boolean;
-  status?: "pending_payment" | "vending" | "complete" | "needs_attention" | "expired";
+  status?: "pending_payment" | "vending" | "complete" | "needs_attention" | "expired" | "not_found";
   token?: string;
   units?: number;
   meter?: string;
@@ -136,8 +136,9 @@ export default function SemiAutoPay({ meter, phone, email, currency, amount, onB
         const res = await fetch(`${API}/order-status?id=${encodeURIComponent(order!.orderId)}`);
         const data = (await res.json()) as OrderStatusResp;
         if (stop) return;
-        // ok:false with no status means the backend can't find this order.
-        if (data.ok === false && !data.status) { setLost(true); return; }
+        // The backend can't find this order: /order-status returns
+        // { ok:false, status:"not_found" } on 404 (older shapes had no status).
+        if (data.ok === false && (data.status === "not_found" || !data.status)) { setLost(true); return; }
         setStatus(data);
         if (data.status === "complete" || data.status === "needs_attention" || data.status === "expired") return;
       } catch { /* transient — retry */ }

@@ -404,7 +404,9 @@ export default function BuyFlow() {
                   role={phoneInvalid ? "alert" : undefined}
                   className={`mt-1.5 text-xs ${phoneInvalid ? "font-medium text-danger" : "text-dim"}`}
                 >
-                  Econet/NetOne number — 07XXXXXXXX or +2637XXXXXXXX
+                  {phoneInvalid
+                    ? "Enter a valid Econet/NetOne number — 07XXXXXXXX or +2637XXXXXXXX"
+                    : "Econet/NetOne number — 07XXXXXXXX or +2637XXXXXXXX"}
                 </p>
               </div>
               <div>
