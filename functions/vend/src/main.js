@@ -677,9 +677,12 @@ async function reconcile(db, log, error) {
   for (const order of open) {
     const row = await db.getRow(DB_ID, ORDERS, order.$id).catch(() => null);
     if (!row || row.status !== "pending_payment") continue; // matched above
-    // Prefer the expiresAt the customer was shown; fall back to createdAt+TTL.
-    const expiresAt = row.expiresAt
-      || new Date(Date.parse(row.$createdAt) + ttlMin * 60_000).toISOString();
+    // Prefer the expiresAt the customer was shown; fall back to createdAt+TTL
+    // when it's missing OR unparseable (a malformed timestamp must never make
+    // an order immortal — isOrderExpired treats it as "not expired").
+    const expiresAt = Number.isFinite(Date.parse(row.expiresAt || ""))
+      ? row.expiresAt
+      : new Date(Date.parse(row.$createdAt) + ttlMin * 60_000).toISOString();
     if (isOrderExpired(expiresAt, now)) {
       await db.updateRow(DB_ID, ORDERS, order.$id, { status: "expired" });
       summary.expired++;
