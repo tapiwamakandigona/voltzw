@@ -46,12 +46,12 @@ describe("matchDeltaToOrders", () => {
 
   it("matches a single order exactly", () => {
     const r = matchDeltaToOrders(1103, [o("a", 1103), o("b", 2201)]);
-    expect(r).toEqual({ matched: ["a"], ambiguous: false, candidates: [] });
+    expect(r).toEqual({ matched: ["a"], ambiguous: false, candidates: [], truncated: false });
   });
 
   it("returns no match when delta fits nothing", () => {
     const r = matchDeltaToOrders(999, [o("a", 1103), o("b", 2201)]);
-    expect(r).toEqual({ matched: [], ambiguous: false, candidates: [] });
+    expect(r).toEqual({ matched: [], ambiguous: false, candidates: [], truncated: false });
   });
 
   it("returns no match for zero/negative delta", () => {
@@ -69,7 +69,7 @@ describe("matchDeltaToOrders", () => {
   it("prefers the exact single order over a multi-order subset with the same sum", () => {
     // 3.00 == 1.00 + 2.00, but a single $3.00 payment is the likely event
     const r = matchDeltaToOrders(300, [o("a", 100), o("b", 200), o("c", 300)]);
-    expect(r).toEqual({ matched: ["c"], ambiguous: false, candidates: [] });
+    expect(r).toEqual({ matched: ["c"], ambiguous: false, candidates: [], truncated: false });
   });
 
   it("flags ambiguity when several subsets explain the delta", () => {
@@ -80,8 +80,36 @@ describe("matchDeltaToOrders", () => {
     expect([...r.candidates].sort()).toEqual(["a", "b", "x", "y"]);
   });
 
+  it("matches an exact single order even when the book exceeds the cap", () => {
+    // Payment for the LAST order in a >maxOrders book must still match:
+    // the exact-match fast path scans the FULL book before truncation.
+    const big = Array.from({ length: 120 }, (_, i) => o(`o${i}`, 10_000 + i * 7));
+    const r = matchDeltaToOrders(big[119].amountDueCents, big);
+    expect(r).toEqual({ matched: ["o119"], ambiguous: false, candidates: [], truncated: false });
+  });
+
+  it("reports truncation when the subset search runs on a capped book", () => {
+    const big = Array.from({ length: 120 }, (_, i) => o(`o${i}`, 10_000 + i * 7));
+    // No exact single order equals this delta → subset search on capped book.
+    const r = matchDeltaToOrders(1, big);
+    expect(r.matched).toEqual([]);
+    expect(r.truncated).toBe(true);
+  });
+
+  it("does not report truncation when the book fits within the cap", () => {
+    const small = Array.from({ length: 10 }, (_, i) => o(`o${i}`, 1000 + i));
+    expect(matchDeltaToOrders(1, small).truncated).toBe(false);
+  });
+
+  it("respects a custom maxOrders cap for the subset search", () => {
+    const book = [o("a", 100), o("b", 200), o("c", 300)];
+    // cap=2 keeps the two SMALLEST after sorting; 100+200 is still findable.
+    const r = matchDeltaToOrders(300, book.filter((x) => x.id !== "c"), 2);
+    expect([...r.matched].sort()).toEqual(["a", "b"]);
+  });
+
   it("handles an empty order book", () => {
-    expect(matchDeltaToOrders(1103, [])).toEqual({ matched: [], ambiguous: false, candidates: [] });
+    expect(matchDeltaToOrders(1103, [])).toEqual({ matched: [], ambiguous: false, candidates: [], truncated: false });
   });
 });
 

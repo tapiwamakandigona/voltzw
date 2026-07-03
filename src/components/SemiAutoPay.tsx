@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { BoltIcon } from "@/components/icons";
+import { saveLastOrderRef } from "@/components/buy-helpers";
 
 const API = "https://voltzw-vend.appwrite.network";
 
@@ -16,7 +18,7 @@ type OrderResp = {
 
 type OrderStatusResp = {
   ok: boolean;
-  status?: "pending_payment" | "vending" | "complete" | "needs_attention" | "expired";
+  status?: "pending_payment" | "vending" | "complete" | "needs_attention" | "expired" | "not_found";
   token?: string;
   units?: number;
   meter?: string;
@@ -99,6 +101,7 @@ export default function SemiAutoPay({ meter, phone, email, currency, amount, onB
   const [order, setOrder] = useState<OrderResp | null>(null);
   const [status, setStatus] = useState<OrderStatusResp | null>(null);
   const [error, setError] = useState("");
+  const [lost, setLost] = useState(false); // poll cap reached or order unknown
   const [copied, setCopied] = useState(false);
   const stopped = useRef(false);
 
@@ -107,7 +110,12 @@ export default function SemiAutoPay({ meter, phone, email, currency, amount, onB
   useEffect(() => {
     stopped.current = false;
     createOrder({ meter, phone, email, currency, amount })
-      .then((data) => { if (!stopped.current) setOrder(data); })
+      .then((data) => {
+        // CONTRACT-3: persist the ref at order creation so /buy/status can
+        // recover it even if a later link/redirect drops the query string.
+        saveLastOrderRef(data.orderId);
+        if (!stopped.current) setOrder(data);
+      })
       .catch((e) => {
         if (!stopped.current) setError(e instanceof Error ? e.message : "Could not create your order.");
       });
@@ -115,20 +123,27 @@ export default function SemiAutoPay({ meter, phone, email, currency, amount, onB
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Poll the order status every 5s until it settles.
+  // Poll the order status every 5s until it settles (capped at ~5 minutes,
+  // same as TokenStatus — the countdown/SMS covers anything slower).
   useEffect(() => {
     if (!order) return;
     let stop = false;
+    let tries = 0;
     async function poll() {
       if (stop) return;
+      tries += 1;
       try {
         const res = await fetch(`${API}/order-status?id=${encodeURIComponent(order!.orderId)}`);
         const data = (await res.json()) as OrderStatusResp;
         if (stop) return;
+        // The backend can't find this order: /order-status returns
+        // { ok:false, status:"not_found" } on 404 (older shapes had no status).
+        if (data.ok === false && (data.status === "not_found" || !data.status)) { setLost(true); return; }
         setStatus(data);
         if (data.status === "complete" || data.status === "needs_attention" || data.status === "expired") return;
       } catch { /* transient — retry */ }
-      setTimeout(poll, 5000);
+      if (tries < 60) setTimeout(poll, 5000);
+      else setLost(true);
     }
     poll();
     return () => { stop = true; };
@@ -147,7 +162,7 @@ export default function SemiAutoPay({ meter, phone, email, currency, amount, onB
 
   if (error) {
     return (
-      <div className="animate-rise py-6 text-center">
+      <div role="alert" className="animate-rise py-6 text-center">
         <p className="font-display text-lg font-semibold">Could not start your order</p>
         <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-dim">{error}</p>
         <button onClick={onBack} className="mt-5 rounded-lg bg-ink px-6 py-2.5 font-display font-semibold text-white transition hover:bg-ink/85">
@@ -168,10 +183,33 @@ export default function SemiAutoPay({ meter, phone, email, currency, amount, onB
 
   /* ---- settled states ---- */
 
+  if (lost) {
+    const supportHref = `mailto:silentics.org@gmail.com?subject=${encodeURIComponent(
+      `VoltZW order ${order.orderId}`
+    )}&body=${encodeURIComponent(`Hi, I need help with my order. Reference: ${order.orderId}`)}`;
+    return (
+      <div className="animate-rise py-6 text-center">
+        <p className="font-display text-lg font-semibold">This is taking longer than usual</p>
+        <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-dim">
+          If you paid, your token will still arrive by SMS — your money is safe. Keep your order
+          reference <span className="font-mono font-medium text-ink">{order.orderId}</span>, or{" "}
+          <a href={supportHref} className="text-volt-deep underline">contact support with this reference</a>{" "}
+          and we&apos;ll sort it out.
+        </p>
+        <button onClick={() => window.location.reload()} className="mt-5 rounded-lg bg-ink px-6 py-2.5 font-display font-semibold text-white transition hover:bg-ink/85">
+          Refresh now
+        </button>
+      </div>
+    );
+  }
+
   if (status?.status === "complete" && status.token) {
     return (
-      <div className="animate-rise py-2 text-center">
-        <p className="text-sm font-medium uppercase tracking-wider text-volt-deep">Token delivered ⚡</p>
+      <div aria-live="polite" className="animate-rise py-2 text-center">
+        <p className="text-sm font-medium uppercase tracking-wider text-volt-deep">
+          Token delivered
+          <BoltIcon className="ml-1 inline-block h-4 w-4 -translate-y-px align-middle" />
+        </p>
         <p className="mt-4 select-all break-all font-mono text-2xl font-bold tracking-wider sm:text-3xl">
           {formatToken(status.token)}
         </p>
@@ -242,6 +280,7 @@ export default function SemiAutoPay({ meter, phone, email, currency, amount, onB
         <p className="mt-2 text-xs leading-relaxed text-dim">
           Pay this exact amount — <span className="font-medium text-ink">including the {currency === "USD" ? `${cents} cents` : `.${cents}`}</span> —
           so we can match your payment to meter <span className="font-mono">{meter}</span>.
+          The matching cents aren&apos;t extra: they&apos;re credited to your token value.
         </p>
       </div>
 
