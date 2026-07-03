@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, Inter } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
@@ -27,7 +27,18 @@ export const metadata: Metadata = {
     title: "VoltZW — ZESA electricity, made simple",
     description: "Calculator with live tariffs, token retrieval help, and the stepped-tariff tricks that save you money.",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "VoltZW — ZESA electricity, made simple",
+    description: "Calculator with live tariffs, token retrieval help, and the stepped-tariff tricks that save you money.",
+  },
   robots: { index: true, follow: true },
+};
+
+// Next.js 16: viewport options (incl. themeColor) are exported separately
+// from metadata — see node_modules/next/dist/docs/.../generate-viewport.md
+export const viewport: Viewport = {
+  themeColor: "#16181d",
 };
 
 function Header() {
@@ -38,10 +49,10 @@ function Header() {
           <span className="bg-volt px-1.5 py-0.5 mr-0.5">Volt</span>ZW
         </Link>
         {/* min-h-11 (44px) hit areas — WCAG 2.5.8 / mobile touch targets */}
-        <nav className="flex items-center gap-3 text-[13px] font-medium sm:gap-6 sm:text-sm">
-          <Link href="/" className="inline-flex min-h-11 items-center hover:text-volt-deep"><span className="sm:hidden">Calc</span><span className="hidden sm:inline">Calculator</span></Link>
-          <Link href="/zesa-tariffs/" className="inline-flex min-h-11 items-center hover:text-volt-deep">Tariffs</Link>
-          <Link href="/retrieve-zesa-token/" className="inline-flex min-h-11 items-center hover:text-volt-deep"><span className="sm:hidden">Retrieve</span><span className="hidden sm:inline">Retrieve token</span></Link>
+        <nav aria-label="Primary" className="flex items-center gap-1.5 text-[13px] font-medium sm:gap-4 sm:text-sm">
+          <Link href="/" className="inline-flex min-h-11 items-center px-1.5 hover:text-volt-deep sm:px-2"><span className="sm:hidden">Calc</span><span className="hidden sm:inline">Calculator</span></Link>
+          <Link href="/zesa-tariffs/" className="inline-flex min-h-11 items-center px-1.5 hover:text-volt-deep sm:px-2">Tariffs</Link>
+          <Link href="/retrieve-zesa-token/" className="inline-flex min-h-11 items-center px-1.5 hover:text-volt-deep sm:px-2"><span className="sm:hidden">Retrieve</span><span className="hidden sm:inline">Retrieve token</span></Link>
           <Link href="/buy/" className="inline-flex min-h-11 items-center whitespace-nowrap rounded-md bg-volt px-2.5 font-semibold text-ink transition hover:bg-volt-deep hover:text-white sm:px-3"><span className="sm:hidden">Buy</span><span className="hidden sm:inline">Buy tokens</span></Link>
         </nav>
       </div>
@@ -94,8 +105,15 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body className={`${display.variable} ${body.variable} font-sans antialiased`}>
+        {/* Keyboard users can jump past the sticky header (WCAG 2.4.1). */}
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-ink focus:px-4 focus:py-2.5 focus:font-display focus:text-sm focus:font-semibold focus:text-white"
+        >
+          Skip to content
+        </a>
         <Header />
-        <main>{children}</main>
+        <main id="main">{children}</main>
         <Footer />
       </body>
     </html>
