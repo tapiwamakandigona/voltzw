@@ -62,6 +62,9 @@ export type MatchResult = {
   ambiguous: boolean;
   /** On ambiguity: every order appearing in at least one matching subset. */
   candidates: string[];
+  /** True when the order book exceeded maxOrders and the subset search ran
+   *  on a truncated book — callers should alert/log so it isn't silent. */
+  truncated: boolean;
 };
 
 /** Match a positive wallet-balance delta (cents) against open orders.
@@ -83,21 +86,31 @@ export type MatchResult = {
 export function matchDeltaToOrders(
   deltaCents: number,
   openOrders: OpenOrder[],
-  maxOrders = 20
+  maxOrders = 50
 ): MatchResult {
-  const none: MatchResult = { matched: [], ambiguous: false, candidates: [] };
+  const none: MatchResult = { matched: [], ambiguous: false, candidates: [], truncated: false };
   const delta = Math.round(deltaCents);
   if (delta <= 0 || openOrders.length === 0) return none;
 
-  const orders = openOrders
+  const fullBook = openOrders
     .map((o) => ({ id: o.id, amountDueCents: Math.round(o.amountDueCents) }))
-    .filter((o) => o.amountDueCents > 0)
-    .slice(0, maxOrders)
-    .sort((a, b) => a.amountDueCents - b.amountDueCents);
+    .filter((o) => o.amountDueCents > 0);
 
-  // Fast path: exact single order.
-  const exact = orders.filter((o) => o.amountDueCents === delta);
-  if (exact.length === 1) return { matched: [exact[0].id], ambiguous: false, candidates: [] };
+  // Fast path: exact single order — checked against the FULL book so a
+  // payment for an order beyond the cap still matches. Unique-cents
+  // allocation guarantees at most one open order per exact amount, but we
+  // still require exactly one to stay safe against dirty data.
+  const exact = fullBook.filter((o) => o.amountDueCents === delta);
+  if (exact.length === 1) {
+    return { matched: [exact[0].id], ambiguous: false, candidates: [], truncated: false };
+  }
+
+  // Subset search runs on a capped book: sort FIRST (oldest→largest is not
+  // meaningful here; ascending amount enables pruning), then truncate.
+  const truncated = fullBook.length > maxOrders;
+  const orders = [...fullBook]
+    .sort((a, b) => a.amountDueCents - b.amountDueCents)
+    .slice(0, maxOrders);
 
   // Subset-sum: collect up to 2 distinct subsets (enough to detect ambiguity).
   const found: string[][] = [];
@@ -124,12 +137,12 @@ export function matchDeltaToOrders(
   }
   dfs(0, delta);
 
-  if (found.length === 1) return { matched: found[0], ambiguous: false, candidates: [] };
+  if (found.length === 1) return { matched: found[0], ambiguous: false, candidates: [], truncated };
   if (found.length >= 2) {
     const candidates = [...new Set(found.flat())];
-    return { matched: [], ambiguous: true, candidates };
+    return { matched: [], ambiguous: true, candidates, truncated };
   }
-  return none;
+  return { ...none, truncated };
 }
 
 /** True when a pending order has passed its expiry timestamp. */

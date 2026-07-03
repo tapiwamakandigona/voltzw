@@ -87,19 +87,27 @@ function allocateUniqueAmountCents(baseCents, openAmountsCents) {
 // Exact single order wins; otherwise only an UNAMBIGUOUS subset (exactly
 // one subset summing to delta) is vended; multiple subsets → ambiguous with
 // all involved orders as candidates. See src/lib/orders.ts for full notes.
-function matchDeltaToOrders(deltaCents, openOrders, maxOrders = 20) {
-  const none = { matched: [], ambiguous: false, candidates: [] };
+function matchDeltaToOrders(deltaCents, openOrders, maxOrders = 50) {
+  const none = { matched: [], ambiguous: false, candidates: [], truncated: false };
   const delta = Math.round(deltaCents);
   if (delta <= 0 || openOrders.length === 0) return none;
 
-  const orders = openOrders
+  const fullBook = openOrders
     .map((o) => ({ id: o.id, amountDueCents: Math.round(o.amountDueCents) }))
-    .filter((o) => o.amountDueCents > 0)
-    .slice(0, maxOrders)
-    .sort((a, b) => a.amountDueCents - b.amountDueCents);
+    .filter((o) => o.amountDueCents > 0);
 
-  const exact = orders.filter((o) => o.amountDueCents === delta);
-  if (exact.length === 1) return { matched: [exact[0].id], ambiguous: false, candidates: [] };
+  // Fast path: exact single order — checked against the FULL book so a
+  // payment for an order beyond the cap still matches.
+  const exact = fullBook.filter((o) => o.amountDueCents === delta);
+  if (exact.length === 1) {
+    return { matched: [exact[0].id], ambiguous: false, candidates: [], truncated: false };
+  }
+
+  // Subset search runs on a capped book: sort FIRST, then truncate.
+  const truncated = fullBook.length > maxOrders;
+  const orders = [...fullBook]
+    .sort((a, b) => a.amountDueCents - b.amountDueCents)
+    .slice(0, maxOrders);
 
   const found = [];
   const suffixSums = new Array(orders.length + 1).fill(0);
@@ -120,11 +128,11 @@ function matchDeltaToOrders(deltaCents, openOrders, maxOrders = 20) {
   }
   dfs(0, delta);
 
-  if (found.length === 1) return { matched: found[0], ambiguous: false, candidates: [] };
+  if (found.length === 1) return { matched: found[0], ambiguous: false, candidates: [], truncated };
   if (found.length >= 2) {
-    return { matched: [], ambiguous: true, candidates: [...new Set(found.flat())] };
+    return { matched: [], ambiguous: true, candidates: [...new Set(found.flat())], truncated };
   }
-  return none;
+  return { ...none, truncated };
 }
 
 function isOrderExpired(expiresAtIso, nowMs) {
@@ -290,14 +298,37 @@ async function paynowInitiate({ ref, amount, currency, email }) {
   return { browserUrl: data.browserurl, pollUrl: data.pollurl };
 }
 
-async function paynowPoll(pollUrl) {
+// Verify the SHA512 integrity hash Paynow includes on poll responses:
+// SHA512 over the concatenated field VALUES in received order (excluding the
+// hash field itself) with the integration key appended, uppercase hex.
+// A response with no hash at all is NOT valid.
+function verifyPaynowResponseHash(text, integrationKey) {
+  if (!integrationKey) return false;
+  const values = [];
+  let hash = null;
+  for (const [k, v] of new URLSearchParams(text)) {
+    if (k.toLowerCase() === "hash") hash = v;
+    else values.push(v);
+  }
+  if (!hash) return false;
+  const expected = paynowHash(values, integrationKey);
+  const a = Buffer.from(String(hash).toUpperCase(), "utf8");
+  const b = Buffer.from(expected, "utf8");
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+async function paynowPoll(pollUrl, integrationKey) {
   // Transient "TypeError: fetch failed" here used to 500 /status — retry briefly.
   let lastErr;
   for (let attempt = 0; attempt < 3; attempt++) {
     if (attempt > 0) await new Promise((r) => setTimeout(r, 300 * attempt));
     try {
       const res = await fetch(pollUrl, { method: "POST" });
-      return parseUrlEncoded(await res.text());
+      const text = await res.text();
+      return {
+        fields: parseUrlEncoded(text),
+        hashValid: verifyPaynowResponseHash(text, integrationKey),
+      };
     } catch (e) {
       lastErr = e;
     }
@@ -324,6 +355,14 @@ function makeRef() {
 // The Hot Recharge ZESA wallet is single-currency (payload has no currency field).
 // If the payment currency differs from the wallet currency, convert using the
 // same live FX approximation the site publishes.
+// FX sanity envelope: the rate comes from the PUBLIC tariffs.json, so a
+// poisoned/corrupted value must never flow into a vend. Configurable via
+// FX_MIN / FX_MAX env vars (ZWG per USD).
+function parseFxBound(raw, fallback) {
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
 async function toVendAmount(amount, txCurrency, log) {
   const wallet = (process.env.HR_WALLET_CURRENCY || "").toUpperCase();
   if (!wallet || wallet === txCurrency) {
@@ -334,6 +373,12 @@ async function toVendAmount(amount, txCurrency, log) {
   const t = await res.json();
   const rate = Number(t.zwgPerUsdApprox);
   if (!(rate > 0)) throw new Error("Cannot convert vend amount: bad FX rate");
+  const fxMin = parseFxBound(process.env.FX_MIN, 5);
+  const fxMax = parseFxBound(process.env.FX_MAX, 500);
+  if (rate < fxMin || rate > fxMax) {
+    await alert(`FX RATE OUT OF BOUNDS: zwgPerUsdApprox=${rate} outside [${fxMin}, ${fxMax}] — refusing to vend on this rate`);
+    throw new Error(`Cannot convert vend amount: FX rate ${rate} outside sane bounds [${fxMin}, ${fxMax}]`);
+  }
   const converted = txCurrency === "USD" && wallet === "ZWG"
     ? amount * rate
     : txCurrency === "ZWG" && wallet === "USD"
@@ -533,15 +578,20 @@ async function vendOrder(db, order, log, error) {
 // Resume orders stuck in "vending" from a previous run.
 async function resumeVendingOrder(db, order, log, error) {
   if (order.hrQueryId) {
-    // Pending on ZETDC's side — query, never re-vend.
+    // Pending on ZETDC's side — query, never re-vend. Take the order lock
+    // first: completeOrder/failOrderNeedsAttention release it, and releasing
+    // a lock we never acquired could free a concurrent runner's lock.
+    if (!(await acquireLock(db, order.ref))) return 0; // another run is on it
     const qr = await hrQueryZesa(order.hrQueryId);
     const parsed = parseVendReply(qr);
     if (parsed.outcome === "delivered") {
       await completeOrder(db, order, parsed, error);
     } else if (parsed.outcome === "failed") {
       await failOrderNeedsAttention(db, order, `zesa query failed: ${parsed.detail}`, error);
+    } else {
+      // still pending → leave as-is, poll again next run
+      await releaseLock(db, order.ref);
     }
-    // still pending → leave as-is, poll again next run
     return 0;
   }
   // Vend attempt died mid-flight — retry with the stored agentRef (the vend
@@ -570,9 +620,25 @@ async function resumeVendingOrder(db, order, log, error) {
  *      phantom positive deltas that could falsely match an order), which is
  *      why vendOrder only reports deductions it is confident about.
  */
+// Reconcile-level mutex: two overlapping runs would share one baseline read
+// and could silently absorb a payment. Same create-row lock pattern as vends
+// (stale after LOCK_STALE_MS ≈ 2 min); a locked run returns busy and skips.
+const RECONCILE_LOCK_REF = "reconcile-run";
+
 async function reconcile(db, log, error) {
   if (paymentMode() !== "semi_auto") return { ok: true, skipped: "payment mode is not semi_auto" };
+  if (!(await acquireLock(db, RECONCILE_LOCK_REF))) {
+    log("reconcile: another run holds the lock — skipping");
+    return { ok: true, busy: "another reconcile is already running" };
+  }
+  try {
+    return await reconcileLocked(db, log, error);
+  } finally {
+    await releaseLock(db, RECONCILE_LOCK_REF);
+  }
+}
 
+async function reconcileLocked(db, log, error) {
   const balResp = await hrGet("agents/wallet-balance-zesa");
   const balanceCents = parseWalletBalanceCents(balResp);
   if (balanceCents === null) {
@@ -614,7 +680,7 @@ async function reconcile(db, log, error) {
 
   // 2. Load the open order book.
   const openRows = await db.listRows(DB_ID, ORDERS, [
-    Query.equal("status", "pending_payment"), Query.orderAsc("$createdAt"), Query.limit(100),
+    Query.equal("status", "pending_payment"), Query.orderAsc("$createdAt"), Query.limit(200),
   ]);
   const open = openRows.rows;
 
@@ -622,34 +688,37 @@ async function reconcile(db, log, error) {
   const deltaCents = balanceCents - lastCents;
   if (deltaCents > 0 && open.length > 0) {
     const book = open.map((o) => ({ id: o.$id, amountDueCents: Math.round(Number(o.amountDueCents)) }));
-    const smallest = Math.min(...book.map((b) => b.amountDueCents));
-    if (deltaCents >= smallest) {
-      const match = matchDeltaToOrders(deltaCents, book);
-      if (match.matched.length > 0) {
-        for (const id of match.matched) {
-          const order = open.find((o) => o.$id === id);
-          vendDeductCents += await vendOrder(db, order, log, error);
-          summary.vended++;
-        }
-      } else if (match.ambiguous) {
-        // We cannot tell who paid — flag every plausible order for the owner
-        // and still advance the baseline so the delta isn't re-processed.
-        for (const id of match.candidates) {
-          const order = open.find((o) => o.$id === id);
-          await failOrderNeedsAttention(
-            db, order,
-            `ambiguous payment match: wallet delta ${fromCents(deltaCents)} fits multiple order combinations`,
-            error
-          );
-          summary.ambiguous++;
-        }
-      } else {
-        // Money arrived that matches no order (wrong amount paid, owner
-        // top-up, HR adjustment). Alert and advance the baseline; wrongly
-        // paid customers surface via the alert + /admin/orders + expiry.
-        summary.unmatchedDelta = fromCents(deltaCents);
-        await alert(`RECONCILE: unmatched wallet delta ${fromCents(deltaCents)} (open orders: ${open.length}) — money received that fits no order`);
+    const match = matchDeltaToOrders(deltaCents, book);
+    if (match.truncated) {
+      // The subset search ran on a truncated book — matches beyond the cap
+      // can be missed (exact single-order matches still see the full book).
+      await alert(`RECONCILE: open order book (${book.length}) exceeds the subset-search cap — multi-order matching may miss orders`);
+    }
+    if (match.matched.length > 0) {
+      for (const id of match.matched) {
+        const order = open.find((o) => o.$id === id);
+        vendDeductCents += await vendOrder(db, order, log, error);
+        summary.vended++;
       }
+    } else if (match.ambiguous) {
+      // We cannot tell who paid — flag every plausible order for the owner
+      // and still advance the baseline so the delta isn't re-processed.
+      for (const id of match.candidates) {
+        const order = open.find((o) => o.$id === id);
+        await failOrderNeedsAttention(
+          db, order,
+          `ambiguous payment match: wallet delta ${fromCents(deltaCents)} fits multiple order combinations`,
+          error
+        );
+        summary.ambiguous++;
+      }
+    } else {
+      // Money arrived that matches no order (wrong amount paid, owner
+      // top-up, HR adjustment) — including deltas SMALLER than the smallest
+      // open order (short payment). Alert and advance the baseline; wrongly
+      // paid customers surface via the alert + /admin/orders + expiry.
+      summary.unmatchedDelta = fromCents(deltaCents);
+      await alert(`RECONCILE: unmatched wallet delta ${fromCents(deltaCents)} (open orders: ${open.length}) — money received that fits no order`);
     }
   } else if (deltaCents > 0) {
     // Balance rose with no open orders (owner top-up) — just advance.
@@ -666,9 +735,12 @@ async function reconcile(db, log, error) {
   for (const order of open) {
     const row = await db.getRow(DB_ID, ORDERS, order.$id).catch(() => null);
     if (!row || row.status !== "pending_payment") continue; // matched above
-    // Prefer the expiresAt the customer was shown; fall back to createdAt+TTL.
-    const expiresAt = row.expiresAt
-      || new Date(Date.parse(row.$createdAt) + ttlMin * 60_000).toISOString();
+    // Prefer the expiresAt the customer was shown; fall back to createdAt+TTL
+    // when it's missing OR unparseable (a malformed timestamp must never make
+    // an order immortal — isOrderExpired treats it as "not expired").
+    const expiresAt = Number.isFinite(Date.parse(row.expiresAt || ""))
+      ? row.expiresAt
+      : new Date(Date.parse(row.$createdAt) + ttlMin * 60_000).toISOString();
     if (isOrderExpired(expiresAt, now)) {
       await db.updateRow(DB_ID, ORDERS, order.$id, { status: "expired" });
       summary.expired++;
@@ -686,6 +758,50 @@ async function reconcile(db, log, error) {
   summary.newBaseline = fromCents(finalCents);
   log(`reconcile: ${JSON.stringify(summary)}`);
   return summary;
+}
+
+/* ---------------- Rate limiting ----------------
+   Fixed-window per-IP counters in the kv table (fail-open: a kv hiccup must
+   never block a purchase). Key: rl:<route>:<ip>:<minuteBucket>; the row ID is
+   a hash of the key because Appwrite row IDs can't contain ":" or ".". */
+
+function clientIp(req) {
+  const fwd = String(req.headers["x-forwarded-for"] || "");
+  return fwd.split(",")[0].trim() || "unknown";
+}
+
+async function rateLimitAllows(db, route, ip, limit) {
+  try {
+    const bucket = Math.floor(Date.now() / 60_000);
+    const key = `rl:${route}:${ip}:${bucket}`;
+    const rowId = "rl-" + crypto.createHash("sha256").update(key).digest("hex").slice(0, 30);
+    try {
+      await db.createRow(DB_ID, KV, rowId, { key, value: "1" });
+      return true;
+    } catch {
+      const row = await db.getRow(DB_ID, KV, rowId);
+      const count = Math.round(Number(row.value)) || 0;
+      if (count >= limit) return false;
+      await db.updateRow(DB_ID, KV, rowId, { value: String(count + 1) });
+      return true;
+    }
+  } catch {
+    return true; // fail open
+  }
+}
+
+const RATE_LIMITED = { ok: false, error: "Too many requests — slow down." };
+
+/* ---------------- Admin auth ---------------- */
+
+// Constant-time x-admin-key check (hash both sides so lengths always match).
+function isAdminAuthorized(req) {
+  const expected = process.env.ADMIN_KEY;
+  if (!expected) return false;
+  const given = String(req.headers["x-admin-key"] || "");
+  const a = crypto.createHash("sha256").update(given).digest();
+  const b = crypto.createHash("sha256").update(expected).digest();
+  return crypto.timingSafeEqual(a, b);
 }
 
 /* ---------------- Handler ---------------- */
@@ -737,7 +853,7 @@ const handler = async ({ req, res, log, error }) => {
 
     /* ---- manual reconcile trigger (requires ADMIN_KEY) ---- */
     if (path === "/poll" && req.method === "POST") {
-      if (!process.env.ADMIN_KEY || req.headers["x-admin-key"] !== process.env.ADMIN_KEY) {
+      if (!isAdminAuthorized(req)) {
         return json({ ok: false, error: "Not found." }, 404);
       }
       return json(await reconcile(db, log, error));
@@ -745,7 +861,7 @@ const handler = async ({ req, res, log, error }) => {
 
     /* ---- admin: wallet balances (requires ADMIN_KEY) ---- */
     if (path === "/wallet") {
-      if (!process.env.ADMIN_KEY || req.headers["x-admin-key"] !== process.env.ADMIN_KEY) {
+      if (!isAdminAuthorized(req)) {
         return json({ ok: false, error: "Not found." }, 404);
       }
       const [zesa, main] = await Promise.all([
@@ -757,6 +873,9 @@ const handler = async ({ req, res, log, error }) => {
 
     /* ---- meter lookup ---- */
     if (path === "/check-meter" && req.method === "POST") {
+      if (!(await rateLimitAllows(db, "check-meter", clientIp(req), 10))) {
+        return json(RATE_LIMITED, 429);
+      }
       const { meter } = req.bodyJson || {};
       if (!/^\d{9,13}$/.test(meter || "")) {
         return json({ ok: false, error: "Enter a valid meter number (9–13 digits)." }, 400);
@@ -765,14 +884,19 @@ const handler = async ({ req, res, log, error }) => {
       if (r.ReplyCode === 2 || r.ReplyCode === "2") {
         return json({
           ok: true,
+          found: true,
           customerName: (r.CustomerInfo?.CustomerName || r.AccountName || "").trim(),
           address: (r.CustomerInfo?.Address || r.Address || "").trim(),
         });
       }
+      // CONTRACT-1: a valid-format but unknown meter is NOT an error — it's a
+      // successful lookup with no result. 200 + found:false so the frontend
+      // can render it as guidance instead of a failure.
       return json({
-        ok: false,
-        error: r.ReplyMsg || "Meter not found. Double-check the number.",
-      }, 404);
+        ok: true,
+        found: false,
+        message: r.ReplyMsg || "Meter not found. Double-check the number.",
+      });
     }
 
     /* ---- launch waitlist (pre-launch interest capture) ---- */
@@ -796,6 +920,9 @@ const handler = async ({ req, res, log, error }) => {
 
     /* ---- semi-auto: create an order (customer pays the HR wallet directly) ---- */
     if (path === "/order" && req.method === "POST") {
+      if (!(await rateLimitAllows(db, "order", clientIp(req), 5))) {
+        return json(RATE_LIMITED, 429);
+      }
       if (paymentMode() !== "semi_auto") {
         return json({ ok: false, error: "Direct EcoCash orders are not available right now." }, 503);
       }
@@ -817,7 +944,6 @@ const handler = async ({ req, res, log, error }) => {
       }
 
       const feePct = parseFeePct(process.env.SERVICE_FEE_PCT);
-      const tokenValue = tokenValueForGross(amt, feePct);
 
       // Unique-cents allocation: every open order gets a distinct exact amount
       // so a wallet-balance delta identifies exactly one order.
@@ -830,6 +956,10 @@ const handler = async ({ req, res, log, error }) => {
         return json({ ok: false, error: "Too many pending orders for this amount right now — please try again in a few minutes." }, 503);
       }
       const amountDue = fromCents(amountDueCents);
+      // CONTRACT-2: the customer pays amountDue (base + matching-cents
+      // offset), so the token value comes from the FULL amountDue — their
+      // matching cents are credited to the token, not silently kept.
+      const tokenValue = tokenValueForGross(amountDue, feePct);
 
       const ref = makeRef();
       const ttlMin = parseTtlMin(process.env.ORDER_TTL_MIN);
@@ -878,7 +1008,7 @@ const handler = async ({ req, res, log, error }) => {
 
     /* ---- admin: order book (requires ADMIN_KEY) ---- */
     if (path === "/admin/orders") {
-      if (!process.env.ADMIN_KEY || req.headers["x-admin-key"] !== process.env.ADMIN_KEY) {
+      if (!isAdminAuthorized(req)) {
         return json({ ok: false, error: "Not found." }, 404);
       }
       const rows = await db.listRows(DB_ID, ORDERS, [
@@ -945,11 +1075,24 @@ const handler = async ({ req, res, log, error }) => {
         return json({ ok: true, status: "cancelled" });
       }
 
-      // ZETDC-side pending vend: query, never re-vend.
+      // ZETDC-side pending vend: query, never re-vend. Interpret the reply
+      // through parseVendReply so a terminal FAILURE marks vend_failed +
+      // alerts instead of looping as "processing" forever (mirrors the
+      // orders flow in resumeVendingOrder).
       if (tx.status === "vend_pending" && tx.hrRef) {
         const qr = await hrQueryZesa(tx.hrRef);
-        if (qr.ReplyCode === 2 || qr.ReplyCode === "2") {
+        const parsed = parseVendReply(qr);
+        if (parsed.outcome === "delivered") {
           return finalizeVend(db, tx, qr, json, error);
+        }
+        if (parsed.outcome === "failed") {
+          await db.updateRow(DB_ID, TABLE, tx.$id, {
+            status: "vend_failed",
+            lastError: String(`zesa query failed: ${parsed.detail}`).slice(0, 1000),
+          });
+          error(`vend_pending query failed ref=${tx.ref}: ${parsed.detail}`);
+          await alert(`VEND FAILED (pending query) ref=${tx.ref} meter=${tx.meter} ${tx.currency} ${tx.amount}: ${parsed.detail}`);
+          return json({ ok: true, status: "vend_failed", meter: tx.meter });
         }
         return json({ ok: true, status: "processing" });
       }
@@ -959,9 +1102,18 @@ const handler = async ({ req, res, log, error }) => {
         return attemptVend(db, tx, json, log, error);
       }
 
-      const pn = await paynowPoll(tx.pollUrl);
-      const pnStatus = (pn.status || "").toLowerCase();
-      log(`ref=${ref} paynow=${pnStatus}`);
+      const pn = await paynowPoll(tx.pollUrl, CURRENCIES[tx.currency]?.key);
+      const pnStatus = (pn.fields.status || "").toLowerCase();
+      log(`ref=${ref} paynow=${pnStatus} hashValid=${pn.hashValid}`);
+
+      // Never act on a poll response whose integrity hash is missing or
+      // wrong — treat as not-paid (stay pending) and log/alert. This gates
+      // both the vend (money-critical) and the cancel transitions.
+      if (!pn.hashValid && (pnStatus === "paid" || pnStatus === "awaiting delivery" || pnStatus === "cancelled" || pnStatus === "failed")) {
+        error(`paynow poll response failed hash verification ref=${ref} (status=${pnStatus}) — ignoring`);
+        await alert(`PAYNOW HASH VERIFICATION FAILED ref=${ref} status=${pnStatus} — response ignored`);
+        return json({ ok: true, status: "pending" });
+      }
 
       if (pnStatus === "paid" || pnStatus === "awaiting delivery") {
         return attemptVend(db, tx, json, log, error);
