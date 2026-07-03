@@ -355,6 +355,14 @@ function makeRef() {
 // The Hot Recharge ZESA wallet is single-currency (payload has no currency field).
 // If the payment currency differs from the wallet currency, convert using the
 // same live FX approximation the site publishes.
+// FX sanity envelope: the rate comes from the PUBLIC tariffs.json, so a
+// poisoned/corrupted value must never flow into a vend. Configurable via
+// FX_MIN / FX_MAX env vars (ZWG per USD).
+function parseFxBound(raw, fallback) {
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
 async function toVendAmount(amount, txCurrency, log) {
   const wallet = (process.env.HR_WALLET_CURRENCY || "").toUpperCase();
   if (!wallet || wallet === txCurrency) {
@@ -365,6 +373,12 @@ async function toVendAmount(amount, txCurrency, log) {
   const t = await res.json();
   const rate = Number(t.zwgPerUsdApprox);
   if (!(rate > 0)) throw new Error("Cannot convert vend amount: bad FX rate");
+  const fxMin = parseFxBound(process.env.FX_MIN, 5);
+  const fxMax = parseFxBound(process.env.FX_MAX, 500);
+  if (rate < fxMin || rate > fxMax) {
+    await alert(`FX RATE OUT OF BOUNDS: zwgPerUsdApprox=${rate} outside [${fxMin}, ${fxMax}] — refusing to vend on this rate`);
+    throw new Error(`Cannot convert vend amount: FX rate ${rate} outside sane bounds [${fxMin}, ${fxMax}]`);
+  }
   const converted = txCurrency === "USD" && wallet === "ZWG"
     ? amount * rate
     : txCurrency === "ZWG" && wallet === "USD"
