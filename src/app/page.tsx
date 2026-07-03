@@ -74,7 +74,7 @@ export default function Home() {
             {/* Art-directed break: the yellow phrase gets its own line on
                 desktop instead of wrapping mid-phrase. */}
             <br className="hidden lg:block" />
-            <span className="text-volt">real stepped tariffs</span>
+            <span className="text-volt">real stepped tariffs<span aria-hidden>.</span></span>
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-white/70">
             See exactly how many units your money buys — band by band, including the 6% REA levy and your
@@ -87,7 +87,7 @@ export default function Home() {
         <Calculator />
       </section>
 
-      <section className="container-page mt-14 grid gap-6 sm:grid-cols-3">
+      <section className="container-page mt-14 grid gap-6 md:grid-cols-3">
         {[
           {
             href: "/zesa-tariffs/",
@@ -126,7 +126,7 @@ export default function Home() {
           </p>
           <Link
             href="/buy/"
-            className="mt-5 inline-block rounded-lg bg-volt px-6 py-3 font-semibold text-ink transition hover:bg-volt-deep hover:text-white"
+            className="mt-5 inline-block rounded-lg bg-volt px-6 py-3 font-semibold text-ink transition hover:bg-volt/80"
           >
             Buy tokens now →
           </Link>
