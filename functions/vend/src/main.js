@@ -953,11 +953,24 @@ const handler = async ({ req, res, log, error }) => {
         return json({ ok: true, status: "cancelled" });
       }
 
-      // ZETDC-side pending vend: query, never re-vend.
+      // ZETDC-side pending vend: query, never re-vend. Interpret the reply
+      // through parseVendReply so a terminal FAILURE marks vend_failed +
+      // alerts instead of looping as "processing" forever (mirrors the
+      // orders flow in resumeVendingOrder).
       if (tx.status === "vend_pending" && tx.hrRef) {
         const qr = await hrQueryZesa(tx.hrRef);
-        if (qr.ReplyCode === 2 || qr.ReplyCode === "2") {
+        const parsed = parseVendReply(qr);
+        if (parsed.outcome === "delivered") {
           return finalizeVend(db, tx, qr, json, error);
+        }
+        if (parsed.outcome === "failed") {
+          await db.updateRow(DB_ID, TABLE, tx.$id, {
+            status: "vend_failed",
+            lastError: String(`zesa query failed: ${parsed.detail}`).slice(0, 1000),
+          });
+          error(`vend_pending query failed ref=${tx.ref}: ${parsed.detail}`);
+          await alert(`VEND FAILED (pending query) ref=${tx.ref} meter=${tx.meter} ${tx.currency} ${tx.amount}: ${parsed.detail}`);
+          return json({ ok: true, status: "vend_failed", meter: tx.meter });
         }
         return json({ ok: true, status: "processing" });
       }
