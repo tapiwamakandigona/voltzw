@@ -87,19 +87,27 @@ function allocateUniqueAmountCents(baseCents, openAmountsCents) {
 // Exact single order wins; otherwise only an UNAMBIGUOUS subset (exactly
 // one subset summing to delta) is vended; multiple subsets → ambiguous with
 // all involved orders as candidates. See src/lib/orders.ts for full notes.
-function matchDeltaToOrders(deltaCents, openOrders, maxOrders = 20) {
-  const none = { matched: [], ambiguous: false, candidates: [] };
+function matchDeltaToOrders(deltaCents, openOrders, maxOrders = 50) {
+  const none = { matched: [], ambiguous: false, candidates: [], truncated: false };
   const delta = Math.round(deltaCents);
   if (delta <= 0 || openOrders.length === 0) return none;
 
-  const orders = openOrders
+  const fullBook = openOrders
     .map((o) => ({ id: o.id, amountDueCents: Math.round(o.amountDueCents) }))
-    .filter((o) => o.amountDueCents > 0)
-    .slice(0, maxOrders)
-    .sort((a, b) => a.amountDueCents - b.amountDueCents);
+    .filter((o) => o.amountDueCents > 0);
 
-  const exact = orders.filter((o) => o.amountDueCents === delta);
-  if (exact.length === 1) return { matched: [exact[0].id], ambiguous: false, candidates: [] };
+  // Fast path: exact single order — checked against the FULL book so a
+  // payment for an order beyond the cap still matches.
+  const exact = fullBook.filter((o) => o.amountDueCents === delta);
+  if (exact.length === 1) {
+    return { matched: [exact[0].id], ambiguous: false, candidates: [], truncated: false };
+  }
+
+  // Subset search runs on a capped book: sort FIRST, then truncate.
+  const truncated = fullBook.length > maxOrders;
+  const orders = [...fullBook]
+    .sort((a, b) => a.amountDueCents - b.amountDueCents)
+    .slice(0, maxOrders);
 
   const found = [];
   const suffixSums = new Array(orders.length + 1).fill(0);
@@ -120,11 +128,11 @@ function matchDeltaToOrders(deltaCents, openOrders, maxOrders = 20) {
   }
   dfs(0, delta);
 
-  if (found.length === 1) return { matched: found[0], ambiguous: false, candidates: [] };
+  if (found.length === 1) return { matched: found[0], ambiguous: false, candidates: [], truncated };
   if (found.length >= 2) {
-    return { matched: [], ambiguous: true, candidates: [...new Set(found.flat())] };
+    return { matched: [], ambiguous: true, candidates: [...new Set(found.flat())], truncated };
   }
-  return none;
+  return { ...none, truncated };
 }
 
 function isOrderExpired(expiresAtIso, nowMs) {
