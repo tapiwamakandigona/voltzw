@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 :root {
+  /* The site is light-only; tell the UA so form controls/scrollbars don't
+     flip dark and forced dark-mode extensions have accurate info. */
+  color-scheme: light;
   --ink: #16181d;
   --paper: #f7f6f3;
   --card: #ffffff;
@@ -10,6 +13,13 @@
   --volt-deep: #8a6600;
   --line: rgba(22, 24, 29, 0.12);
   --dim: rgba(22, 24, 29, 0.6);
+  /* Semantic status colors — keep raw red/green Tailwind shades out of components. */
+  --danger: #b42318;      /* AA on white and on --danger-bg */
+  --danger-bg: #fef3f2;
+  --danger-border: #fecdca;
+  --success: #067647;     /* AA on white and on --success-bg */
+  --success-bg: #ecfdf3;
+  --success-border: #abefc6;
 }
 
 @theme inline {
@@ -20,8 +30,17 @@
   --color-volt-deep: var(--volt-deep);
   --color-line: var(--line);
   --color-dim: var(--dim);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-danger-border: var(--danger-border);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-success-border: var(--success-border);
   --font-sans: var(--font-body);
   --font-display: var(--font-display);
+  /* Deliberate mono stack for tokens/meter numbers — tabular, no webfont. */
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Mono",
+    "Roboto Mono", Menlo, Consolas, monospace;
 }
 
 html { scroll-behavior: smooth; }
@@ -51,6 +70,25 @@ body {
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
+/* Right-edge fade on horizontally scrollable tables — signals there is more
+   content off-screen on narrow viewports. Apply to the relative wrapper
+   around an overflow-x-auto element. */
+.scroll-hint { position: relative; }
+.scroll-hint::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1.75rem;
+  border-radius: inherit;
+  background: linear-gradient(to left, var(--card) 15%, transparent);
+  pointer-events: none;
+}
+@media (min-width: 640px) {
+  .scroll-hint::after { display: none; }
+}
 
 @keyframes rise {
   from { opacity: 0; transform: translateY(8px); }

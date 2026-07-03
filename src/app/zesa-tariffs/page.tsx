@@ -24,7 +24,7 @@ export default function TariffsPage() {
           <p className="text-xs font-semibold uppercase tracking-widest text-volt">
             Effective {TARIFFS.effectiveDate} · verified {TARIFFS.lastVerified}
           </p>
-          <h1 className="font-display mt-3 text-4xl font-bold">Current ZESA tariffs</h1>
+          <h1 className="font-display mt-3 text-4xl font-bold">Current ZESA tariffs<span aria-hidden className="text-volt">.</span></h1>
           <p className="mt-3 max-w-2xl text-white/70">
             ZERA-approved ZETDC prepaid tariffs — every band, with and without the 6% Rural Electrification (REA) levy.
           </p>
@@ -32,27 +32,28 @@ export default function TariffsPage() {
       </section>
 
       <section className="container-page mt-10">
-        <div className="overflow-x-auto rounded-2xl border border-line bg-card shadow-sm">
+        <div className="scroll-hint rounded-2xl border border-line bg-card shadow-sm"><div className="overflow-x-auto rounded-2xl">
           <table className="w-full text-xs sm:text-sm">
             <thead>
               <tr className="border-b border-line bg-paper text-left text-xs uppercase tracking-wider text-dim">
-                <th className="px-2.5 py-3 sm:px-4 font-medium">Consumption band (monthly)</th>
-                <th className="px-2.5 py-3 sm:px-4 text-right font-medium">Base ZWG/unit</th>
-                <th className="px-2.5 py-3 sm:px-4 text-right font-medium">Incl. 6% REA</th>
-                <th className="px-2.5 py-3 sm:px-4 text-right font-medium">≈ USD/unit</th>
+                <th className="px-2 py-3 font-medium sm:px-4">Consumption band (monthly)</th>
+                <th className="whitespace-nowrap px-2 py-3 text-right font-medium sm:px-4">Base ZWG/unit</th>
+                <th className="whitespace-nowrap px-2 py-3 text-right font-medium sm:px-4">Incl. 6% REA</th>
+                <th className="whitespace-nowrap px-2 py-3 text-right font-medium sm:px-4">≈ USD/unit</th>
               </tr>
             </thead>
             <tbody>
               {BANDS.map((b) => (
                 <tr key={b.label} className="border-b border-line last:border-0">
-                  <td className="px-2.5 py-3 sm:px-4 font-medium">{b.label}</td>
-                  <td className="px-2.5 py-3 sm:px-4 text-right font-mono">{fmt(b.baseZwg, 4)}</td>
-                  <td className="px-2.5 py-3 sm:px-4 text-right font-mono font-semibold">{fmt(b.inclLevyZwg, 4)}</td>
-                  <td className="px-2.5 py-3 sm:px-4 text-right font-mono">${fmt(b.usdApprox)}</td>
+                  <td className="px-2 py-3 font-medium sm:px-4">{b.label}</td>
+                  <td className="whitespace-nowrap px-2 py-3 text-right font-mono sm:px-4">{fmt(b.baseZwg, 4)}</td>
+                  <td className="whitespace-nowrap px-2 py-3 text-right font-mono sm:px-4 font-semibold">{fmt(b.inclLevyZwg, 4)}</td>
+                  <td className="whitespace-nowrap px-2 py-3 text-right font-mono sm:px-4">${fmt(b.usdApprox)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
         </div>
         <p className="mt-3 text-xs text-dim">
           Source: ZERA-approved ZETDC schedule via Zimpricecheck & Magetsi. USD estimates only — you pay in ZWG unless
@@ -87,25 +88,26 @@ export default function TariffsPage() {
         </div>
         <div>
           <h2 className="font-display text-2xl font-bold">What it costs, cumulatively</h2>
-          <div className="mt-4 overflow-x-auto rounded-2xl border border-line bg-card shadow-sm">
+          <div className="scroll-hint mt-4 rounded-2xl border border-line bg-card shadow-sm"><div className="overflow-x-auto rounded-2xl">
             <table className="w-full text-xs sm:text-sm">
               <thead>
                 <tr className="border-b border-line bg-paper text-left text-xs uppercase tracking-wider text-dim">
-                  <th className="px-2.5 py-3 sm:px-4 font-medium">Buying up to…</th>
-                  <th className="px-2.5 py-3 sm:px-4 text-right font-medium">Total ZWG</th>
-                  <th className="px-2.5 py-3 sm:px-4 text-right font-medium">≈ USD</th>
+                  <th className="px-2 py-3 font-medium sm:px-4">Buying up to…</th>
+                  <th className="whitespace-nowrap px-2 py-3 text-right font-medium sm:px-4">Total ZWG</th>
+                  <th className="whitespace-nowrap px-2 py-3 text-right font-medium sm:px-4">≈ USD</th>
                 </tr>
               </thead>
               <tbody>
                 {cumulative.map((c) => (
                   <tr key={c.label} className="border-b border-line last:border-0">
-                    <td className="px-2.5 py-3 sm:px-4 font-medium">{c.label}</td>
-                    <td className="px-2.5 py-3 sm:px-4 text-right font-mono">{fmt(c.total)}</td>
-                    <td className="px-2.5 py-3 sm:px-4 text-right font-mono">${fmt(zwgToUsd(c.total))}</td>
+                    <td className="px-2 py-3 font-medium sm:px-4">{c.label}</td>
+                    <td className="whitespace-nowrap px-2 py-3 text-right font-mono sm:px-4">{fmt(c.total)}</td>
+                    <td className="whitespace-nowrap px-2 py-3 text-right font-mono sm:px-4">${fmt(zwgToUsd(c.total))}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
           </div>
           <div className="mt-5 rounded-lg border border-volt/60 bg-volt/10 p-4 text-sm leading-relaxed">
             <p className="font-semibold"><BulbIcon />Money-saving rule of thumb</p>
@@ -116,7 +118,7 @@ export default function TariffsPage() {
               to see your exact price before you pay.
             </p>
           </div>
-          <div className="mt-5 rounded-lg border border-line bg-white p-4 text-sm leading-relaxed">
+          <div className="mt-5 rounded-lg border border-line bg-card p-4 text-sm leading-relaxed">
             <p className="font-semibold"><WrenchIcon />For developers</p>
             <p className="mt-1">
               These tariffs are available as a free JSON API — we track ZERA rate changes and keep it current:{" "}
@@ -134,7 +136,7 @@ export default function TariffsPage() {
             <h2 className="font-display text-xl font-bold">Ready to top up?</h2>
             <p className="mt-1 text-sm text-white/70">Buy ZESA tokens with EcoCash in USD or ZWG — token on screen and by SMS.</p>
           </div>
-          <Link href="/buy/" className="shrink-0 rounded-lg bg-volt px-6 py-3 font-semibold text-ink transition hover:bg-volt-deep hover:text-white">
+          <Link href="/buy/" className="shrink-0 rounded-lg bg-volt px-6 py-3 font-semibold text-ink transition hover:bg-volt/80">
             Buy tokens →
           </Link>
         </div>
