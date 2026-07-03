@@ -26,31 +26,33 @@ function parseInput(raw: string, what: string): { value: number; error: string |
 function SliceTable({ slices, currency }: { slices: BandSlice[]; currency: Currency }) {
   if (slices.length === 0) return null;
   return (
-    <div className="mt-4 overflow-x-auto rounded-lg border border-line bg-card">
-      <table className="w-full min-w-[26rem] text-sm">
-        <thead>
-          <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-dim">
-            <th className="px-3 py-2 font-medium">Band</th>
-            <th className="px-3 py-2 text-right font-medium">Units</th>
-            <th className="px-3 py-2 text-right font-medium">{currency === "ZWG" ? "ZWG/unit" : "US$/unit"}</th>
-            <th className="px-3 py-2 text-right font-medium">Cost</th>
-          </tr>
-        </thead>
-        <tbody>
-          {slices.map((s, i) => (
-            <tr key={i} className="border-b border-line last:border-0">
-              <td className="px-3 py-2 whitespace-nowrap">{s.band.label}</td>
-              <td className="px-3 py-2 text-right font-mono">{fmt(s.units, 1)}</td>
-              <td className="px-3 py-2 text-right font-mono">
-                {currency === "ZWG" ? fmt(s.band.inclLevyZwg, 4) : fmt(zwgToUsd(s.band.inclLevyZwg), 4)}
-              </td>
-              <td className="px-3 py-2 text-right font-mono whitespace-nowrap">
-                {currency === "ZWG" ? `ZWG ${fmt(s.costZwg)}` : `US$${fmt(zwgToUsd(s.costZwg))}`}
-              </td>
+    <div className="scroll-hint mt-4 rounded-lg border border-line bg-card">
+      <div className="overflow-x-auto rounded-lg">
+        <table className="w-full text-xs sm:text-sm">
+          <thead>
+            <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-dim">
+              <th className="px-2 py-2 font-medium sm:px-3">Band</th>
+              <th className="px-2 py-2 text-right font-medium sm:px-3">Units</th>
+              <th className="px-2 py-2 text-right font-medium sm:px-3">{currency === "ZWG" ? "ZWG/unit" : "US$/unit"}</th>
+              <th className="px-2 py-2 text-right font-medium sm:px-3">Cost</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {slices.map((s, i) => (
+              <tr key={i} className="border-b border-line last:border-0">
+                <td className="px-2 py-2 whitespace-nowrap sm:px-3">{s.band.label}</td>
+                <td className="px-2 py-2 text-right font-mono sm:px-3">{fmt(s.units, 1)}</td>
+                <td className="px-2 py-2 text-right font-mono whitespace-nowrap sm:px-3">
+                  {currency === "ZWG" ? fmt(s.band.inclLevyZwg, 4) : fmt(zwgToUsd(s.band.inclLevyZwg), 4)}
+                </td>
+                <td className="px-2 py-2 text-right font-mono whitespace-nowrap sm:px-3">
+                  {currency === "ZWG" ? `ZWG ${fmt(s.costZwg)}` : `US$${fmt(zwgToUsd(s.costZwg))}`}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -110,7 +112,7 @@ export default function Calculator() {
             type="button"
             aria-pressed={mode === "money"}
             onClick={() => setMode("money")}
-            className={`rounded-md px-3 py-2 transition ${mode === "money" ? "bg-ink text-white" : "text-dim hover:text-ink"}`}
+            className={`min-h-11 rounded-md px-3 py-2 transition ${mode === "money" ? "bg-ink text-white" : "text-dim hover:text-ink"}`}
           >
             Money → Units
           </button>
@@ -118,7 +120,7 @@ export default function Calculator() {
             type="button"
             aria-pressed={mode === "units"}
             onClick={() => setMode("units")}
-            className={`rounded-md px-3 py-2 transition ${mode === "units" ? "bg-ink text-white" : "text-dim hover:text-ink"}`}
+            className={`min-h-11 rounded-md px-3 py-2 transition ${mode === "units" ? "bg-ink text-white" : "text-dim hover:text-ink"}`}
           >
             Units → Money
           </button>
@@ -130,7 +132,7 @@ export default function Calculator() {
               type="button"
               aria-pressed={currency === c}
               onClick={() => switchCurrency(c)}
-              className={`rounded-md px-3 py-2 transition ${currency === c ? "bg-volt text-ink" : "text-dim hover:text-ink"}`}
+              className={`min-h-11 rounded-md px-3 py-2 transition ${currency === c ? "bg-volt text-ink" : "text-dim hover:text-ink"}`}
             >
               {c === "USD" ? "US$" : "ZWG"}
             </button>

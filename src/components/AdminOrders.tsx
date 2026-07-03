@@ -47,10 +47,10 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_STYLE: Record<string, string> = {
-  needs_attention: "border-red-300 bg-red-50 text-red-700",
+  needs_attention: "border-danger-border bg-danger-bg text-danger",
   vending: "border-volt/40 bg-volt/15 text-volt-deep",
   pending_payment: "border-line bg-paper text-dim",
-  complete: "border-volt/40 bg-volt/10 text-ink",
+  complete: "border-success-border bg-success-bg text-success",
   expired: "border-line bg-paper text-dim",
 };
 
@@ -114,6 +114,7 @@ export default function AdminOrders() {
           value={key}
           onChange={(e) => { setKey(e.target.value); setSaved(false); }}
           placeholder="Admin key"
+          aria-label="Admin key"
           autoComplete="off"
           className="w-full rounded-lg border border-line bg-paper px-4 py-2.5 font-mono text-sm outline-none transition focus:border-volt focus:ring-2 focus:ring-volt/30"
         />
@@ -127,7 +128,7 @@ export default function AdminOrders() {
       </form>
 
       {error && (
-        <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
+        <p role="alert" className="mt-4 rounded-lg border border-danger-border bg-danger-bg px-4 py-3 text-sm text-danger">{error}</p>
       )}
 
       {data && (
@@ -150,7 +151,7 @@ export default function AdminOrders() {
                   <article
                     key={o.id}
                     className={`rounded-lg border px-4 py-3 text-sm ${
-                      s === "needs_attention" ? "border-red-300 bg-red-50" : "border-line bg-card"
+                      s === "needs_attention" ? "border-danger-border bg-danger-bg" : "border-line bg-card"
                     }`}
                   >
                     <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
@@ -170,7 +171,7 @@ export default function AdminOrders() {
                       </p>
                     )}
                     {o.note && (
-                      <p className="mt-1.5 rounded bg-white/60 px-2 py-1 font-mono text-xs text-red-700">{o.note}</p>
+                      <p className="mt-1.5 rounded bg-white/60 px-2 py-1 font-mono text-xs text-danger">{o.note}</p>
                     )}
                   </article>
                 ))}

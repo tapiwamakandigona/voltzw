@@ -39,7 +39,7 @@ export default function BuyPage() {
           <BuyFlow />
         </div>
         </div>
-        <div className="mt-10 grid gap-4 text-sm sm:grid-cols-3 lg:mt-0 lg:grid-cols-1">
+        <div className="mt-10 grid gap-4 text-sm md:grid-cols-3 lg:mt-0 lg:grid-cols-1">
           <div className="rounded-lg border border-line bg-card p-4">
             <p className="font-display font-semibold">1. Verify</p>
             <p className="mt-1 text-dim">We confirm the registered name on your meter before you pay.</p>

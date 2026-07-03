@@ -73,7 +73,7 @@ export default function RetrievePage() {
       <section className="border-b border-line bg-ink text-white">
         <div className="container-page py-12">
           <p className="text-xs font-semibold uppercase tracking-widest text-volt">Token not showing? Start here</p>
-          <h1 className="font-display mt-3 text-4xl font-bold">How to retrieve a lost ZESA token</h1>
+          <h1 className="font-display mt-3 text-4xl font-bold">How to retrieve a lost ZESA token<span aria-hidden className="text-volt">.</span></h1>
           <p className="mt-3 max-w-2xl text-white/70">
             The golden rule: <strong className="text-white">retrieval goes through the channel you bought from.</strong>{" "}
             Find your purchase method below and follow the steps.
@@ -81,9 +81,33 @@ export default function RetrievePage() {
         </div>
       </section>
 
-      <section className="container-page mt-10 max-w-3xl space-y-8">
+      {/* Jump-to-channel chips — the guide is long; get people to their
+          purchase channel in one tap. */}
+      <nav aria-label="Jump to your channel" className="container-page mt-6 max-w-3xl">
+        <ul className="flex flex-wrap gap-2">
+          {[
+            { href: "#ecocash", label: "EcoCash" },
+            { href: "#bank", label: "Bank app / USSD" },
+            { href: "#online", label: "Online vendor" },
+            { href: "#zetdc", label: "ZETDC portal" },
+            { href: "#in-person", label: "In person" },
+            { href: "#buy-on-voltzw", label: "Never lose one again" },
+          ].map((c) => (
+            <li key={c.href}>
+              <a
+                href={c.href}
+                className="inline-flex min-h-11 items-center rounded-full border border-line bg-card px-4 text-sm font-medium transition hover:border-volt-deep hover:text-volt-deep"
+              >
+                {c.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <section className="container-page mt-8 max-w-3xl space-y-8">
         {methods.map((m) => (
-          <div key={m.id} id={m.id} className="rounded-2xl border border-line bg-card p-6 shadow-sm">
+          <div key={m.id} id={m.id} className="scroll-mt-20 rounded-2xl border border-line bg-card p-6 shadow-sm">
             <h2 className="font-display text-xl font-bold">{m.title}</h2>
             <ol className="mt-4 space-y-3 text-sm leading-relaxed text-dim">
               {m.steps.map((s, i) => (
@@ -98,7 +122,7 @@ export default function RetrievePage() {
           </div>
         ))}
 
-        <div className="rounded-2xl border border-line bg-ink p-6 text-white sm:p-8">
+        <div id="buy-on-voltzw" className="scroll-mt-20 rounded-2xl border border-line bg-ink p-6 text-white sm:p-8">
           <h2 className="font-display text-xl font-bold">Never lose a token again</h2>
           <p className="mt-3 text-sm leading-relaxed text-white/70">
             Buy your tokens on VoltZW and they are delivered <strong className="text-white">on screen and by SMS</strong> —
@@ -107,7 +131,7 @@ export default function RetrievePage() {
           <div className="mt-5 flex flex-wrap gap-3">
             <Link
               href="/buy/"
-              className="rounded-lg bg-volt px-5 py-3 text-sm font-semibold text-ink transition hover:bg-volt-deep hover:text-white"
+              className="rounded-lg bg-volt px-5 py-3 text-sm font-semibold text-ink transition hover:bg-volt/80"
             >
               Buy tokens now
             </Link>
