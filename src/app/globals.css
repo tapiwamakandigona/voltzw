@@ -13,7 +13,7 @@
   --volt-deep: #8a6600;
   --line: rgba(22, 24, 29, 0.12);
   --dim: rgba(22, 24, 29, 0.6);
-  /* Semantic status colors — keep raw red-*/green-* out of components. */
+  /* Semantic status colors — keep raw red/green Tailwind shades out of components. */
   --danger: #b42318;      /* AA on white and on --danger-bg */
   --danger-bg: #fef3f2;
   --danger-border: #fecdca;
