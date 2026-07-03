@@ -622,7 +622,7 @@ async function reconcile(db, log, error) {
 
   // 2. Load the open order book.
   const openRows = await db.listRows(DB_ID, ORDERS, [
-    Query.equal("status", "pending_payment"), Query.orderAsc("$createdAt"), Query.limit(100),
+    Query.equal("status", "pending_payment"), Query.orderAsc("$createdAt"), Query.limit(200),
   ]);
   const open = openRows.rows;
 
@@ -630,34 +630,37 @@ async function reconcile(db, log, error) {
   const deltaCents = balanceCents - lastCents;
   if (deltaCents > 0 && open.length > 0) {
     const book = open.map((o) => ({ id: o.$id, amountDueCents: Math.round(Number(o.amountDueCents)) }));
-    const smallest = Math.min(...book.map((b) => b.amountDueCents));
-    if (deltaCents >= smallest) {
-      const match = matchDeltaToOrders(deltaCents, book);
-      if (match.matched.length > 0) {
-        for (const id of match.matched) {
-          const order = open.find((o) => o.$id === id);
-          vendDeductCents += await vendOrder(db, order, log, error);
-          summary.vended++;
-        }
-      } else if (match.ambiguous) {
-        // We cannot tell who paid — flag every plausible order for the owner
-        // and still advance the baseline so the delta isn't re-processed.
-        for (const id of match.candidates) {
-          const order = open.find((o) => o.$id === id);
-          await failOrderNeedsAttention(
-            db, order,
-            `ambiguous payment match: wallet delta ${fromCents(deltaCents)} fits multiple order combinations`,
-            error
-          );
-          summary.ambiguous++;
-        }
-      } else {
-        // Money arrived that matches no order (wrong amount paid, owner
-        // top-up, HR adjustment). Alert and advance the baseline; wrongly
-        // paid customers surface via the alert + /admin/orders + expiry.
-        summary.unmatchedDelta = fromCents(deltaCents);
-        await alert(`RECONCILE: unmatched wallet delta ${fromCents(deltaCents)} (open orders: ${open.length}) — money received that fits no order`);
+    const match = matchDeltaToOrders(deltaCents, book);
+    if (match.truncated) {
+      // The subset search ran on a truncated book — matches beyond the cap
+      // can be missed (exact single-order matches still see the full book).
+      await alert(`RECONCILE: open order book (${book.length}) exceeds the subset-search cap — multi-order matching may miss orders`);
+    }
+    if (match.matched.length > 0) {
+      for (const id of match.matched) {
+        const order = open.find((o) => o.$id === id);
+        vendDeductCents += await vendOrder(db, order, log, error);
+        summary.vended++;
       }
+    } else if (match.ambiguous) {
+      // We cannot tell who paid — flag every plausible order for the owner
+      // and still advance the baseline so the delta isn't re-processed.
+      for (const id of match.candidates) {
+        const order = open.find((o) => o.$id === id);
+        await failOrderNeedsAttention(
+          db, order,
+          `ambiguous payment match: wallet delta ${fromCents(deltaCents)} fits multiple order combinations`,
+          error
+        );
+        summary.ambiguous++;
+      }
+    } else {
+      // Money arrived that matches no order (wrong amount paid, owner
+      // top-up, HR adjustment) — including deltas SMALLER than the smallest
+      // open order (short payment). Alert and advance the baseline; wrongly
+      // paid customers surface via the alert + /admin/orders + expiry.
+      summary.unmatchedDelta = fromCents(deltaCents);
+      await alert(`RECONCILE: unmatched wallet delta ${fromCents(deltaCents)} (open orders: ${open.length}) — money received that fits no order`);
     }
   } else if (deltaCents > 0) {
     // Balance rose with no open orders (owner top-up) — just advance.
