@@ -298,14 +298,37 @@ async function paynowInitiate({ ref, amount, currency, email }) {
   return { browserUrl: data.browserurl, pollUrl: data.pollurl };
 }
 
-async function paynowPoll(pollUrl) {
+// Verify the SHA512 integrity hash Paynow includes on poll responses:
+// SHA512 over the concatenated field VALUES in received order (excluding the
+// hash field itself) with the integration key appended, uppercase hex.
+// A response with no hash at all is NOT valid.
+function verifyPaynowResponseHash(text, integrationKey) {
+  if (!integrationKey) return false;
+  const values = [];
+  let hash = null;
+  for (const [k, v] of new URLSearchParams(text)) {
+    if (k.toLowerCase() === "hash") hash = v;
+    else values.push(v);
+  }
+  if (!hash) return false;
+  const expected = paynowHash(values, integrationKey);
+  const a = Buffer.from(String(hash).toUpperCase(), "utf8");
+  const b = Buffer.from(expected, "utf8");
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+async function paynowPoll(pollUrl, integrationKey) {
   // Transient "TypeError: fetch failed" here used to 500 /status — retry briefly.
   let lastErr;
   for (let attempt = 0; attempt < 3; attempt++) {
     if (attempt > 0) await new Promise((r) => setTimeout(r, 300 * attempt));
     try {
       const res = await fetch(pollUrl, { method: "POST" });
-      return parseUrlEncoded(await res.text());
+      const text = await res.text();
+      return {
+        fields: parseUrlEncoded(text),
+        hashValid: verifyPaynowResponseHash(text, integrationKey),
+      };
     } catch (e) {
       lastErr = e;
     }
@@ -989,9 +1012,18 @@ const handler = async ({ req, res, log, error }) => {
         return attemptVend(db, tx, json, log, error);
       }
 
-      const pn = await paynowPoll(tx.pollUrl);
-      const pnStatus = (pn.status || "").toLowerCase();
-      log(`ref=${ref} paynow=${pnStatus}`);
+      const pn = await paynowPoll(tx.pollUrl, CURRENCIES[tx.currency]?.key);
+      const pnStatus = (pn.fields.status || "").toLowerCase();
+      log(`ref=${ref} paynow=${pnStatus} hashValid=${pn.hashValid}`);
+
+      // Never act on a poll response whose integrity hash is missing or
+      // wrong — treat as not-paid (stay pending) and log/alert. This gates
+      // both the vend (money-critical) and the cancel transitions.
+      if (!pn.hashValid && (pnStatus === "paid" || pnStatus === "awaiting delivery" || pnStatus === "cancelled" || pnStatus === "failed")) {
+        error(`paynow poll response failed hash verification ref=${ref} (status=${pnStatus}) — ignoring`);
+        await alert(`PAYNOW HASH VERIFICATION FAILED ref=${ref} status=${pnStatus} — response ignored`);
+        return json({ ok: true, status: "pending" });
+      }
 
       if (pnStatus === "paid" || pnStatus === "awaiting delivery") {
         return attemptVend(db, tx, json, log, error);
