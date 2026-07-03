@@ -20,11 +20,12 @@ export const BANDS = tariffs.bands as Band[];
 export const MONTHLY_QUOTA = tariffs.monthlyQuotaKwh;
 
 /** Sane ceiling for user-supplied amounts/units — far beyond any real
- *  purchase, but keeps 1e400-style input from flowing Infinity into the
- *  band math and rendering "∞". */
+ *  purchase. Huge-but-finite values clamp here so they can't distort the
+ *  band math or render "∞". (1e400-style literals overflow to Infinity in
+ *  JS and are treated as invalid → 0, not clamped.) */
 export const MAX_INPUT = 1_000_000_000;
 
-/** NaN/Infinity → 0, negatives → 0, absurdly large → MAX_INPUT. */
+/** NaN/±Infinity → 0, zero/negatives → 0, huge-but-finite → MAX_INPUT. */
 function sanitize(n: number): number {
   if (!Number.isFinite(n) || n <= 0) return 0;
   return Math.min(n, MAX_INPUT);
