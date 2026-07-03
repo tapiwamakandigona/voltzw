@@ -375,6 +375,10 @@ async function toVendAmount(amount, txCurrency, log) {
   if (!(rate > 0)) throw new Error("Cannot convert vend amount: bad FX rate");
   const fxMin = parseFxBound(process.env.FX_MIN, 5);
   const fxMax = parseFxBound(process.env.FX_MAX, 500);
+  if (!(fxMin < fxMax)) {
+    await alert(`FX BOUNDS MISCONFIGURED: FX_MIN=${fxMin} >= FX_MAX=${fxMax} — refusing to vend until fixed`);
+    throw new Error(`Cannot convert vend amount: FX bounds misconfigured (${fxMin} >= ${fxMax})`);
+  }
   if (rate < fxMin || rate > fxMax) {
     await alert(`FX RATE OUT OF BOUNDS: zwgPerUsdApprox=${rate} outside [${fxMin}, ${fxMax}] — refusing to vend on this rate`);
     throw new Error(`Cannot convert vend amount: FX rate ${rate} outside sane bounds [${fxMin}, ${fxMax}]`);
@@ -391,26 +395,34 @@ async function toVendAmount(amount, txCurrency, log) {
 
 // Lock via createRow with a fixed row ID — the second concurrent creator gets a
 // conflict, which makes this safe against the /status + /result race.
-async function acquireLock(db, ref) {
+async function acquireLock(db, ref, staleMs = LOCK_STALE_MS) {
   const rowId = ref.toLowerCase();
   try {
-    await db.createRow(DB_ID, LOCKS, rowId, { ref });
-    return true;
+    const row = await db.createRow(DB_ID, LOCKS, rowId, { ref });
+    return row.$createdAt; // truthy owner token
   } catch {
     try {
       const row = await db.getRow(DB_ID, LOCKS, rowId);
-      if (Date.now() - new Date(row.$createdAt).getTime() > LOCK_STALE_MS) {
+      if (Date.now() - new Date(row.$createdAt).getTime() > staleMs) {
         await db.deleteRow(DB_ID, LOCKS, rowId);
-        await db.createRow(DB_ID, LOCKS, rowId, { ref });
-        return true; // previous attempt died — take over
+        const created = await db.createRow(DB_ID, LOCKS, rowId, { ref });
+        return created.$createdAt; // previous attempt died — take over
       }
     } catch { /* fall through */ }
     return false;
   }
 }
 
-async function releaseLock(db, ref) {
-  try { await db.deleteRow(DB_ID, LOCKS, ref.toLowerCase()); } catch { /* ok */ }
+async function releaseLock(db, ref, ownerToken) {
+  try {
+    if (ownerToken) {
+      // Only delete OUR lock: if a slow run's lock was stolen as stale, its
+      // release must not free the new holder's lock (letting a third run in).
+      const row = await db.getRow(DB_ID, LOCKS, ref.toLowerCase());
+      if (row.$createdAt !== ownerToken) return;
+    }
+    await db.deleteRow(DB_ID, LOCKS, ref.toLowerCase());
+  } catch { /* ok */ }
 }
 
 async function finalizeVend(db, tx, vr, json, error) {
@@ -537,7 +549,7 @@ async function failOrderNeedsAttention(db, order, note, error) {
 // we are CONFIDENT were deducted from the wallet by this call (used for the
 // balance-baseline bookkeeping in reconcile — see notes there).
 async function vendOrder(db, order, log, error) {
-  if (!(await acquireLock(db, order.ref))) return 0; // another run is on it
+  if (!(await acquireLock(db, order.ref))) return null; // another run is on it — no-op
   const isRetry = Boolean(order.hrRef);
   const agentRef = order.hrRef || crypto.randomUUID().replaceAll("-", "").slice(0, 24);
   // Persist agentRef BEFORE vending so a crash mid-vend retries with the same
@@ -581,7 +593,7 @@ async function resumeVendingOrder(db, order, log, error) {
     // Pending on ZETDC's side — query, never re-vend. Take the order lock
     // first: completeOrder/failOrderNeedsAttention release it, and releasing
     // a lock we never acquired could free a concurrent runner's lock.
-    if (!(await acquireLock(db, order.ref))) return 0; // another run is on it
+    if (!(await acquireLock(db, order.ref))) return null; // another run is on it — no-op
     const qr = await hrQueryZesa(order.hrQueryId);
     const parsed = parseVendReply(qr);
     if (parsed.outcome === "delivered") {
@@ -624,17 +636,22 @@ async function resumeVendingOrder(db, order, log, error) {
 // and could silently absorb a payment. Same create-row lock pattern as vends
 // (stale after LOCK_STALE_MS ≈ 2 min); a locked run returns busy and skips.
 const RECONCILE_LOCK_REF = "reconcile-run";
+// A reconcile run can legitimately take minutes (up to 50 resume round-trips
+// + vends + a 200-row sweep), so its lock gets a much longer stale window
+// than the per-order vend locks.
+const RECONCILE_LOCK_STALE_MS = 10 * 60_000;
 
 async function reconcile(db, log, error) {
   if (paymentMode() !== "semi_auto") return { ok: true, skipped: "payment mode is not semi_auto" };
-  if (!(await acquireLock(db, RECONCILE_LOCK_REF))) {
+  const lockToken = await acquireLock(db, RECONCILE_LOCK_REF, RECONCILE_LOCK_STALE_MS);
+  if (!lockToken) {
     log("reconcile: another run holds the lock — skipping");
     return { ok: true, busy: "another reconcile is already running" };
   }
   try {
     return await reconcileLocked(db, log, error);
   } finally {
-    await releaseLock(db, RECONCILE_LOCK_REF);
+    await releaseLock(db, RECONCILE_LOCK_REF, lockToken);
   }
 }
 
@@ -674,7 +691,9 @@ async function reconcileLocked(db, log, error) {
     Query.equal("status", "vending"), Query.limit(50),
   ]);
   for (const order of vendingRows.rows) {
-    vendDeductCents += await resumeVendingOrder(db, order, log, error);
+    const deducted = await resumeVendingOrder(db, order, log, error);
+    if (deducted === null) continue; // lock held elsewhere — nothing happened
+    vendDeductCents += deducted;
     summary.resumed++;
   }
 
@@ -697,7 +716,9 @@ async function reconcileLocked(db, log, error) {
     if (match.matched.length > 0) {
       for (const id of match.matched) {
         const order = open.find((o) => o.$id === id);
-        vendDeductCents += await vendOrder(db, order, log, error);
+        const deducted = await vendOrder(db, order, log, error);
+        if (deducted === null) continue; // lock held elsewhere — nothing happened
+        vendDeductCents += deducted;
         summary.vended++;
       }
     } else if (match.ambiguous) {
@@ -766,8 +787,11 @@ async function reconcileLocked(db, log, error) {
    a hash of the key because Appwrite row IDs can't contain ":" or ".". */
 
 function clientIp(req) {
+  // Use the LAST x-forwarded-for hop: proxies APPEND the real client IP, so
+  // the first hop is caller-controlled (spoofable for bypass or griefing).
   const fwd = String(req.headers["x-forwarded-for"] || "");
-  return fwd.split(",")[0].trim() || "unknown";
+  const hops = fwd.split(",").map((s) => s.trim()).filter(Boolean);
+  return hops[hops.length - 1] || "unknown";
 }
 
 async function rateLimitAllows(db, route, ip, limit) {
@@ -1112,6 +1136,15 @@ const handler = async ({ req, res, log, error }) => {
       if (!pn.hashValid && (pnStatus === "paid" || pnStatus === "awaiting delivery" || pnStatus === "cancelled" || pnStatus === "failed")) {
         error(`paynow poll response failed hash verification ref=${ref} (status=${pnStatus}) — ignoring`);
         await alert(`PAYNOW HASH VERIFICATION FAILED ref=${ref} status=${pnStatus} — response ignored`);
+        return json({ ok: true, status: "pending" });
+      }
+
+      // A valid hash proves origin, not addressee: never act on a poll
+      // response that references a DIFFERENT transaction (swap/replay).
+      const pnRef = String(pn.fields.reference || "");
+      if (pnRef && pnRef.toLowerCase() !== String(tx.ref).toLowerCase()) {
+        error(`paynow poll reference mismatch ref=${tx.ref} got=${pnRef} — ignoring`);
+        await alert(`PAYNOW POLL REFERENCE MISMATCH ref=${tx.ref} got=${pnRef} — response ignored`);
         return json({ ok: true, status: "pending" });
       }
 
