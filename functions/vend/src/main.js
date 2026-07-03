@@ -755,6 +755,50 @@ async function reconcileLocked(db, log, error) {
   return summary;
 }
 
+/* ---------------- Rate limiting ----------------
+   Fixed-window per-IP counters in the kv table (fail-open: a kv hiccup must
+   never block a purchase). Key: rl:<route>:<ip>:<minuteBucket>; the row ID is
+   a hash of the key because Appwrite row IDs can't contain ":" or ".". */
+
+function clientIp(req) {
+  const fwd = String(req.headers["x-forwarded-for"] || "");
+  return fwd.split(",")[0].trim() || "unknown";
+}
+
+async function rateLimitAllows(db, route, ip, limit) {
+  try {
+    const bucket = Math.floor(Date.now() / 60_000);
+    const key = `rl:${route}:${ip}:${bucket}`;
+    const rowId = "rl-" + crypto.createHash("sha256").update(key).digest("hex").slice(0, 30);
+    try {
+      await db.createRow(DB_ID, KV, rowId, { key, value: "1" });
+      return true;
+    } catch {
+      const row = await db.getRow(DB_ID, KV, rowId);
+      const count = Math.round(Number(row.value)) || 0;
+      if (count >= limit) return false;
+      await db.updateRow(DB_ID, KV, rowId, { value: String(count + 1) });
+      return true;
+    }
+  } catch {
+    return true; // fail open
+  }
+}
+
+const RATE_LIMITED = { ok: false, error: "Too many requests — slow down." };
+
+/* ---------------- Admin auth ---------------- */
+
+// Constant-time x-admin-key check (hash both sides so lengths always match).
+function isAdminAuthorized(req) {
+  const expected = process.env.ADMIN_KEY;
+  if (!expected) return false;
+  const given = String(req.headers["x-admin-key"] || "");
+  const a = crypto.createHash("sha256").update(given).digest();
+  const b = crypto.createHash("sha256").update(expected).digest();
+  return crypto.timingSafeEqual(a, b);
+}
+
 /* ---------------- Handler ---------------- */
 
 /* CORS: only the site itself (and localhost for dev) may make browser
@@ -804,7 +848,7 @@ const handler = async ({ req, res, log, error }) => {
 
     /* ---- manual reconcile trigger (requires ADMIN_KEY) ---- */
     if (path === "/poll" && req.method === "POST") {
-      if (!process.env.ADMIN_KEY || req.headers["x-admin-key"] !== process.env.ADMIN_KEY) {
+      if (!isAdminAuthorized(req)) {
         return json({ ok: false, error: "Not found." }, 404);
       }
       return json(await reconcile(db, log, error));
@@ -812,7 +856,7 @@ const handler = async ({ req, res, log, error }) => {
 
     /* ---- admin: wallet balances (requires ADMIN_KEY) ---- */
     if (path === "/wallet") {
-      if (!process.env.ADMIN_KEY || req.headers["x-admin-key"] !== process.env.ADMIN_KEY) {
+      if (!isAdminAuthorized(req)) {
         return json({ ok: false, error: "Not found." }, 404);
       }
       const [zesa, main] = await Promise.all([
@@ -824,6 +868,9 @@ const handler = async ({ req, res, log, error }) => {
 
     /* ---- meter lookup ---- */
     if (path === "/check-meter" && req.method === "POST") {
+      if (!(await rateLimitAllows(db, "check-meter", clientIp(req), 10))) {
+        return json(RATE_LIMITED, 429);
+      }
       const { meter } = req.bodyJson || {};
       if (!/^\d{9,13}$/.test(meter || "")) {
         return json({ ok: false, error: "Enter a valid meter number (9–13 digits)." }, 400);
@@ -868,6 +915,9 @@ const handler = async ({ req, res, log, error }) => {
 
     /* ---- semi-auto: create an order (customer pays the HR wallet directly) ---- */
     if (path === "/order" && req.method === "POST") {
+      if (!(await rateLimitAllows(db, "order", clientIp(req), 5))) {
+        return json(RATE_LIMITED, 429);
+      }
       if (paymentMode() !== "semi_auto") {
         return json({ ok: false, error: "Direct EcoCash orders are not available right now." }, 503);
       }
@@ -953,7 +1003,7 @@ const handler = async ({ req, res, log, error }) => {
 
     /* ---- admin: order book (requires ADMIN_KEY) ---- */
     if (path === "/admin/orders") {
-      if (!process.env.ADMIN_KEY || req.headers["x-admin-key"] !== process.env.ADMIN_KEY) {
+      if (!isAdminAuthorized(req)) {
         return json({ ok: false, error: "Not found." }, 404);
       }
       const rows = await db.listRows(DB_ID, ORDERS, [
