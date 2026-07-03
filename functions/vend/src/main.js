@@ -831,7 +831,6 @@ const handler = async ({ req, res, log, error }) => {
       }
 
       const feePct = parseFeePct(process.env.SERVICE_FEE_PCT);
-      const tokenValue = tokenValueForGross(amt, feePct);
 
       // Unique-cents allocation: every open order gets a distinct exact amount
       // so a wallet-balance delta identifies exactly one order.
@@ -844,6 +843,10 @@ const handler = async ({ req, res, log, error }) => {
         return json({ ok: false, error: "Too many pending orders for this amount right now — please try again in a few minutes." }, 503);
       }
       const amountDue = fromCents(amountDueCents);
+      // CONTRACT-2: the customer pays amountDue (base + matching-cents
+      // offset), so the token value comes from the FULL amountDue — their
+      // matching cents are credited to the token, not silently kept.
+      const tokenValue = tokenValueForGross(amountDue, feePct);
 
       const ref = makeRef();
       const ttlMin = parseTtlMin(process.env.ORDER_TTL_MIN);
