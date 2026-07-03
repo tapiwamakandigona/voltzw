@@ -16,11 +16,23 @@ const MAIN_JS = readFileSync(
   "utf8"
 );
 
-/** Extract `function name(...) { ... }` with balanced braces from main.js. */
+/** Extract `function name(...) { ... }` with balanced braces from main.js.
+ *  Skips the parameter list first so `{}` defaults (e.g. `merchant = {}`)
+ *  don't terminate the brace matching early. */
 function extractFunction(name: string): string {
   const start = MAIN_JS.indexOf(`function ${name}(`);
   if (start === -1) throw new Error(`function ${name} not found in vend main.js`);
-  let i = MAIN_JS.indexOf("{", start);
+  // Walk past the (possibly nested) parameter list.
+  let i = MAIN_JS.indexOf("(", start);
+  let parens = 0;
+  for (; i < MAIN_JS.length; i++) {
+    if (MAIN_JS[i] === "(") parens++;
+    else if (MAIN_JS[i] === ")") {
+      parens--;
+      if (parens === 0) break;
+    }
+  }
+  i = MAIN_JS.indexOf("{", i);
   let depth = 0;
   for (; i < MAIN_JS.length; i++) {
     if (MAIN_JS[i] === "{") depth++;
@@ -46,12 +58,17 @@ const NAMES = [
   "parseTtlMin",
   "allocateUniqueAmountCents",
   "matchDeltaToOrders",
+  "isOrderExpired",
+  "parseWalletBalanceCents",
+  "buildInstructions",
 ] as const;
 
 const source = [
   extractConst("DEFAULT_FEE_PCT"),
   extractConst("DEFAULT_ORDER_TTL_MIN"),
   ...NAMES.map(extractFunction),
+  // parseWalletBalanceCents depends on this internal helper.
+  extractFunction("parseMoneyString"),
   `return { ${NAMES.join(", ")}, DEFAULT_FEE_PCT, DEFAULT_ORDER_TTL_MIN };`,
 ].join("\n");
 
@@ -185,6 +202,25 @@ describe("vend function parity — order math", () => {
     }
   });
 
+  it("matchDeltaToOrders agrees when the book exceeds the cap", () => {
+    // >50 orders: exact single-order match beyond the cap must still hit,
+    // and the truncated flag must agree.
+    const big = Array.from({ length: 120 }, (_, i) => ({
+      id: `o${i}`,
+      amountDueCents: 10_000 + i * 7, // distinct amounts
+    }));
+    const cases = [
+      big[119].amountDueCents, // exact match at the very end of the book
+      big[0].amountDueCents + big[119].amountDueCents, // subset spanning the cap
+      1, // no match, still truncated
+    ];
+    for (const delta of cases) {
+      expect(vend.matchDeltaToOrders(delta, big), `delta=${delta}`).toEqual(
+        ordersTs.matchDeltaToOrders(delta, big)
+      );
+    }
+  });
+
   it("matchDeltaToOrders agrees under deterministic fuzz", () => {
     // Simple LCG so the fuzz is reproducible.
     let seed = 42;
@@ -202,6 +238,80 @@ describe("vend function parity — order math", () => {
       expect(vend.matchDeltaToOrders(delta, orders), `run ${run} delta=${delta}`).toEqual(
         ordersTs.matchDeltaToOrders(delta, orders)
       );
+    }
+  });
+});
+
+describe("vend function parity — order helpers", () => {
+  it("isOrderExpired agrees (valid, malformed, empty timestamps)", () => {
+    const now = Date.UTC(2026, 0, 15, 12, 0, 0);
+    const inputs = [
+      new Date(now - 1).toISOString(),
+      new Date(now + 1).toISOString(),
+      new Date(now).toISOString(), // boundary: exactly now → not expired
+      "not-a-date",
+      "",
+      "2026-13-45T99:99:99Z", // unparseable components
+      "2026-01-01", // date-only still parses
+    ];
+    for (const iso of inputs) {
+      expect(vend.isOrderExpired(iso, now), `isOrderExpired(${iso})`).toBe(
+        ordersTs.isOrderExpired(iso, now)
+      );
+    }
+  });
+
+  it("parseWalletBalanceCents agrees (money-string edge cases)", () => {
+    const inputs: unknown[] = [
+      null,
+      undefined,
+      42,
+      42.555,
+      NaN,
+      Infinity,
+      "ZWG 1,234.56",
+      "$-12.30",
+      "USD 0.01",
+      "..",
+      "-",
+      "",
+      "abc",
+      "1.2.3", // ambiguous double-dot string
+      true,
+      [],
+      { WalletBalance: "1,234.56" },
+      { walletBalance: 12.34 },
+      { Balance: "ZWG 99.99" },
+      { balance: NaN },
+      { AvailableBalance: "0" },
+      { Amount: "  7.50  " },
+      { WalletBalance: "junk", Balance: 5 }, // first key unparseable → falls through
+      { Unrelated: 10 },
+      {},
+    ];
+    for (const [i, input] of inputs.entries()) {
+      expect(vend.parseWalletBalanceCents(input), `case ${i}: ${JSON.stringify(input)}`).toBe(
+        ordersTs.parseWalletBalanceCents(input)
+      );
+    }
+  });
+
+  it("buildInstructions agrees (template + fallback paths)", () => {
+    const cases: Array<[string | undefined, string, { code?: string; name?: string }]> = [
+      [undefined, "$11.03", {}],
+      [undefined, "ZWG 250.07", { code: "12345", name: "Acme" }],
+      ["not json", "$11.03", {}],
+      ["{}", "$11.03", {}], // valid JSON but not an array → fallback
+      ["[]", "$11.03", {}], // empty array → fallback
+      ['["Pay {amount}", "Wait for {amount}"]', "$11.03", {}],
+      ['["Pay", 5]', "$11.03", {}], // non-string element → fallback
+      ['["No placeholder"]', "$99.99", { code: "777" }],
+    ];
+    for (const [tpl, amount, merchant] of cases) {
+      expect(
+        vend.buildInstructions(tpl, amount, merchant),
+        `template=${String(tpl)}`
+      ).toEqual(ordersTs.buildInstructions(tpl, amount, merchant));
     }
   });
 });
