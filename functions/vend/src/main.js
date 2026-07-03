@@ -615,9 +615,25 @@ async function resumeVendingOrder(db, order, log, error) {
  *      phantom positive deltas that could falsely match an order), which is
  *      why vendOrder only reports deductions it is confident about.
  */
+// Reconcile-level mutex: two overlapping runs would share one baseline read
+// and could silently absorb a payment. Same create-row lock pattern as vends
+// (stale after LOCK_STALE_MS ≈ 2 min); a locked run returns busy and skips.
+const RECONCILE_LOCK_REF = "reconcile-run";
+
 async function reconcile(db, log, error) {
   if (paymentMode() !== "semi_auto") return { ok: true, skipped: "payment mode is not semi_auto" };
+  if (!(await acquireLock(db, RECONCILE_LOCK_REF))) {
+    log("reconcile: another run holds the lock — skipping");
+    return { ok: true, busy: "another reconcile is already running" };
+  }
+  try {
+    return await reconcileLocked(db, log, error);
+  } finally {
+    await releaseLock(db, RECONCILE_LOCK_REF);
+  }
+}
 
+async function reconcileLocked(db, log, error) {
   const balResp = await hrGet("agents/wallet-balance-zesa");
   const balanceCents = parseWalletBalanceCents(balResp);
   if (balanceCents === null) {
