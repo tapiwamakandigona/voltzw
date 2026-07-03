@@ -53,7 +53,7 @@ function Header() {
           <Link href="/" className="inline-flex min-h-11 items-center px-1.5 hover:text-volt-deep sm:px-2"><span className="sm:hidden">Calc</span><span className="hidden sm:inline">Calculator</span></Link>
           <Link href="/zesa-tariffs/" className="inline-flex min-h-11 items-center px-1.5 hover:text-volt-deep sm:px-2">Tariffs</Link>
           <Link href="/retrieve-zesa-token/" className="inline-flex min-h-11 items-center px-1.5 hover:text-volt-deep sm:px-2"><span className="sm:hidden">Retrieve</span><span className="hidden sm:inline">Retrieve token</span></Link>
-          <Link href="/buy/" className="inline-flex min-h-11 items-center whitespace-nowrap rounded-md bg-volt px-2.5 font-semibold text-ink transition hover:bg-volt-deep hover:text-white sm:px-3"><span className="sm:hidden">Buy</span><span className="hidden sm:inline">Buy tokens</span></Link>
+          <Link href="/buy/" className="inline-flex min-h-11 items-center whitespace-nowrap rounded-md bg-volt px-2.5 font-semibold text-ink transition hover:bg-volt/80 sm:px-3"><span className="sm:hidden">Buy</span><span className="hidden sm:inline">Buy tokens</span></Link>
         </nav>
       </div>
     </header>
