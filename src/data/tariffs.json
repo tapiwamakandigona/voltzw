@@ -1,6 +1,6 @@
 {
-  "effectiveDate": "2026-07-04",
-  "lastVerified": "2026-07-04",
+  "effectiveDate": "2026-07-05",
+  "lastVerified": "2026-07-05",
   "currency": "ZWG",
   "reaLevyPct": 6,
   "bandsNote": "inclLevyZwg values are as published by the source (mixed rounding in the 4th decimal), not recomputed from baseZwg x 1.06 — do not 'fix' them here.",
