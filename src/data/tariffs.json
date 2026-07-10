@@ -1,11 +1,11 @@
 {
-  "effectiveDate": "2026-07-09",
-  "lastVerified": "2026-07-09",
+  "effectiveDate": "2026-07-10",
+  "lastVerified": "2026-07-10",
   "currency": "ZWG",
   "reaLevyPct": 6,
   "bandsNote": "inclLevyZwg values are as published by the source (mixed rounding in the 4th decimal), not recomputed from baseZwg x 1.06 — do not 'fix' them here.",
   "monthlyQuotaKwh": 400,
-  "zwgPerUsdApprox": 28.4,
+  "zwgPerUsdApprox": 28.3,
   "sources": [
     "https://zimpricecheck.com/price-updates/zesa-tariffs/",
     "https://magetsi.co.zw/zesa-tariffs"
@@ -15,48 +15,48 @@
       "from": 1,
       "to": 50,
       "label": "First 50 units",
-      "baseZwg": 2.1406,
-      "inclLevyZwg": 2.269,
+      "baseZwg": 2.1373,
+      "inclLevyZwg": 2.2655,
       "usdApprox": 0.08
     },
     {
       "from": 51,
       "to": 100,
       "label": "51 – 100 units",
-      "baseZwg": 2.4082,
-      "inclLevyZwg": 2.5526,
+      "baseZwg": 2.4044,
+      "inclLevyZwg": 2.5487,
       "usdApprox": 0.09
     },
     {
       "from": 101,
       "to": 200,
       "label": "101 – 200 units",
-      "baseZwg": 4.2812,
-      "inclLevyZwg": 4.538,
+      "baseZwg": 4.2745,
+      "inclLevyZwg": 4.531,
       "usdApprox": 0.16
     },
     {
       "from": 201,
       "to": 300,
       "label": "201 – 300 units",
-      "baseZwg": 6.1542,
-      "inclLevyZwg": 6.5234,
+      "baseZwg": 6.1447,
+      "inclLevyZwg": 6.5133,
       "usdApprox": 0.23
     },
     {
       "from": 301,
       "to": 400,
       "label": "301 – 400 units",
-      "baseZwg": 6.6893,
-      "inclLevyZwg": 7.0907,
+      "baseZwg": 6.679,
+      "inclLevyZwg": 7.0797,
       "usdApprox": 0.25
     },
     {
       "from": 401,
       "to": null,
       "label": "Above 400 units",
-      "baseZwg": 6.9569,
-      "inclLevyZwg": 7.3743,
+      "baseZwg": 6.9461,
+      "inclLevyZwg": 7.3629,
       "usdApprox": 0.26
     }
   ]
