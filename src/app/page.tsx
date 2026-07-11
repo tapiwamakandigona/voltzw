@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Calculator from "@/components/Calculator";
-import { TARIFFS, MONTHLY_QUOTA, remainingQuota, zwgToUsd, fmt } from "@/lib/tariff";
+import { TARIFFS, MONTHLY_QUOTA, TARIFF_MONTH_LABEL, remainingQuota, zwgToUsd, fmt } from "@/lib/tariff";
 
 export const metadata: Metadata = {
-  title: "Free ZESA Calculator — Convert Money to Units with Current Tariffs",
-  description:
-    "Free ZESA token calculator for Zimbabwe. See exactly how many units (kWh) your money buys with the current ZETDC stepped tariffs, including the 6% REA levy and your 400 kWh monthly quota.",
+  title: `ZESA Calculator — ${TARIFF_MONTH_LABEL} ZETDC Tariffs, Money to Units (Free)`,
+  description: `Free ZESA token calculator for Zimbabwe, updated for the ${TARIFF_MONTH_LABEL} ZETDC tariffs. See exactly how many units (kWh) your money buys — all six stepped bands, the 6% REA levy and your 400 kWh monthly quota included.`,
   alternates: { canonical: "/" },
 };
 

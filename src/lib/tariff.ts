@@ -18,6 +18,8 @@ export type BandSlice = {
 export const TARIFFS = tariffs;
 export const BANDS = tariffs.bands as Band[];
 export const MONTHLY_QUOTA = tariffs.monthlyQuotaKwh;
+// Build-time freshness label, e.g. "July 2026" — derived from the synced tariff data
+export const TARIFF_MONTH_LABEL = new Date(tariffs.effectiveDate + "T00:00:00Z").toLocaleString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
 
 /** Sane ceiling for user-supplied amounts/units — far beyond any real
  *  purchase. Huge-but-finite values clamp here so they can't distort the
