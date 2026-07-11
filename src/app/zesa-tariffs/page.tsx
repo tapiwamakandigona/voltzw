@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { TARIFFS, BANDS, costForUnits, fmt, zwgToUsd } from "@/lib/tariff";
+import { TARIFFS, BANDS, TARIFF_MONTH_LABEL, costForUnits, fmt, zwgToUsd } from "@/lib/tariff";
 import { BulbIcon, WrenchIcon } from "@/components/icons";
 
 export const metadata: Metadata = {
-  title: "Current ZESA Tariffs — ZETDC Stepped Tariff Bands Explained",
-  description:
-    "The latest ZERA-approved ZESA (ZETDC) electricity tariffs for Zimbabwe: all six stepped tariff bands in ZWG and USD, the 6% REA levy, and how the 400 kWh monthly quota works.",
+  title: `ZESA Tariffs ${TARIFF_MONTH_LABEL} — Current ZETDC Stepped Bands (ZWG & USD)`,
+  description: `Current ZERA-approved ZESA (ZETDC) electricity tariffs effective ${TARIFFS.effectiveDate}: all six stepped bands in ZWG and USD, the 6% REA levy, and how the 400 kWh monthly quota works.`,
   alternates: { canonical: "/zesa-tariffs/" },
 };
 
