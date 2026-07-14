@@ -1149,6 +1149,18 @@ const handler = async ({ req, res, log, error }) => {
       }
 
       if (pnStatus === "paid" || pnStatus === "awaiting delivery") {
+        // Verify the AMOUNT actually settled, not just the status: a partial
+        // or edited settlement must never vend the full token value.
+        const pnAmount = Number(pn.fields.amount);
+        if (Number.isFinite(pnAmount) && Math.abs(pnAmount - Number(tx.amount)) > 0.005) {
+          error(`paynow paid amount mismatch ref=${tx.ref} expected=${tx.amount} got=${pnAmount} — not vending`);
+          await alert(`PAYNOW AMOUNT MISMATCH ref=${tx.ref} expected ${tx.currency} ${tx.amount}, settled ${pnAmount} — vend withheld, needs manual review`);
+          // Deliberately no status change: the tx stays pending (schema for the
+          // transactions table is server-side; ORDERS' needs_attention value may
+          // not exist here). The alert + log carry the manual-review signal, and
+          // this guard re-fires on every poll, so it can never vend.
+          return json({ ok: true, status: "pending" });
+        }
         return attemptVend(db, tx, json, log, error);
       }
 
