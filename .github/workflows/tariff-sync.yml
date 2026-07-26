@@ -35,12 +35,16 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Append to the public rate history
+        if: steps.scrape.outputs.changed == 'true'
+        run: node scripts/build-history.mjs
+
       - name: Commit new tariffs
         if: steps.scrape.outputs.changed == 'true'
         run: |
           git config user.name "voltzw-tariff-bot"
           git config user.email "actions@github.com"
-          git add src/data/tariffs.json
+          git add src/data/tariffs.json src/data/tariff-history.json
           git commit -m "ZESA tariff update ($(node -p "require('./src/data/tariffs.json').effectiveDate"))"
           git push
 

@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { TARIFFS, BANDS, TARIFF_MONTH_LABEL, costForUnits, fmt, zwgToUsd } from "@/lib/tariff";
 import { BulbIcon, WrenchIcon } from "@/components/icons";
+import { FIRST_DATE, HISTORY } from "@/lib/history";
+import { breadcrumb, jsonLdProps, tariffDataset } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: `ZESA Tariffs ${TARIFF_MONTH_LABEL} — Current ZETDC Stepped Bands (ZWG & USD)`,
-  description: `Current ZERA-approved ZESA (ZETDC) electricity tariffs effective ${TARIFFS.effectiveDate}: all six stepped bands in ZWG and USD, the 6% REA levy, and how the 400 kWh monthly quota works.`,
+  title: `ZESA Tariffs Today — ZWG ${fmt(BANDS[0].inclLevyZwg, 2)}/unit, All Six ZETDC Bands (${TARIFFS.effectiveDate})`,
+  description: `Current ZERA-approved ZESA (ZETDC) tariffs for Zimbabwe, effective ${TARIFFS.effectiveDate}: the first 50 units cost ZWG ${fmt(BANDS[0].inclLevyZwg, 4)} incl. the 6% REA levy. All six stepped bands in ZWG and USD, verified daily.`,
   alternates: { canonical: "/zesa-tariffs/" },
 };
 
@@ -16,8 +18,14 @@ export default function TariffsPage() {
   }
   const fullQuota = costForUnits(400).totalZwg;
 
+  const jsonLd = [
+    breadcrumb([["Current ZESA tariffs", "/zesa-tariffs/"]]),
+    tariffDataset({ effectiveDate: TARIFFS.effectiveDate, firstDate: FIRST_DATE, rows: HISTORY.length }),
+  ];
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdProps(...jsonLd)} />
       <section className="border-b border-line bg-ink text-white">
         <div className="container-page py-12">
           <p className="text-xs font-semibold uppercase tracking-widest text-volt">
@@ -26,6 +34,11 @@ export default function TariffsPage() {
           <h1 className="font-display mt-3 text-4xl font-bold">Current ZESA tariffs<span aria-hidden className="text-volt">.</span></h1>
           <p className="mt-3 max-w-2xl text-white/70">
             ZERA-approved ZETDC prepaid tariffs — every band, with and without the 6% Rural Electrification (REA) levy.
+          </p>
+          <p className="mt-4 text-sm">
+            <Link href="/zesa-tariffs/history/" className="underline hover:text-volt">
+              See how these rates have moved since {FIRST_DATE} →
+            </Link>
           </p>
         </div>
       </section>
@@ -120,10 +133,19 @@ export default function TariffsPage() {
           <div className="mt-5 rounded-lg border border-line bg-card p-4 text-sm leading-relaxed">
             <p className="font-semibold"><WrenchIcon />For developers</p>
             <p className="mt-1">
-              These tariffs are available as a free JSON API — we track ZERA rate changes and keep it current:{" "}
-              <a href="/api/tariffs.json" className="font-mono text-xs font-semibold underline">
-                zesa.tapiwa.me/api/tariffs.json
+              These tariffs are a free JSON API — we track ZERA rate changes daily and keep it current:{" "}
+              <a href="/api/v1/tariffs.json" className="font-mono text-xs font-semibold underline">
+                zesa.tapiwa.me/api/v1/tariffs.json
               </a>
+              . The full {HISTORY.length}-schedule series since {FIRST_DATE} is available as{" "}
+              <a href="/api/v1/tariff-history.json" className="font-mono text-xs font-semibold underline">
+                JSON
+              </a>{" "}
+              or{" "}
+              <a href="/api/v1/tariff-history.csv" className="font-mono text-xs font-semibold underline">
+                CSV
+              </a>
+              , free with attribution.
             </p>
           </div>
         </div>
