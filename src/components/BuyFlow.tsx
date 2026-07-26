@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { unitsForAmount, fmt, RATE } from "@/lib/tariff";
 import { tokenValueForGross } from "@/lib/fee";
@@ -13,15 +13,10 @@ import {
   saveLastOrderRef,
 } from "@/components/buy-helpers";
 
-const API = "https://voltzw-vend.appwrite.network";
+import { API, canBuy, useHealth } from "@/components/payment-mode";
 
-// Build-time launch gate (static export):
-//   coming_soon → waitlist capture (current behavior)
-//   semi_auto   → customer pays the Hot Recharge wallet via EcoCash; backend
-//                 matches the exact amount and vends automatically
-//   paynow      → hosted Paynow checkout
-// Keep in sync with PAYMENT_MODE on the vend function.
-const PAYMENT_MODE = process.env.NEXT_PUBLIC_PAYMENT_MODE || "coming_soon";
+// The launch gate is resolved at runtime from the function's /health
+// (see payment-mode.ts) — the build-time env var is only the first paint.
 
 type Currency = "USD" | "ZWG";
 type Step = "meter" | "amount" | "ecocash" | "redirecting" | "waitlisted";
@@ -73,8 +68,10 @@ const PRESETS: Record<Currency, number[]> = {
 };
 
 export default function BuyFlow() {
-  const [live, setLive] = useState<boolean | null>(null);
-  const [feePct, setFeePct] = useState<number | null>(null); // null = unknown (fee shown as included)
+  const health = useHealth();
+  const PAYMENT_MODE = health.mode;
+  const feePct = health.feePct; // null = unknown (fee shown as included)
+  const purchasable = canBuy(health);
   const [step, setStep] = useState<Step>("meter");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -86,15 +83,6 @@ export default function BuyFlow() {
   const [amount, setAmount] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-
-  useEffect(() => {
-    api<{ configured: boolean; feePct?: number }>("/health")
-      .then((h) => {
-        setLive(h.configured);
-        if (typeof h.feePct === "number" && h.feePct >= 0) setFeePct(h.feePct);
-      })
-      .catch(() => setLive(false));
-  }, []);
 
   const amt = parseFloat(amount) || 0;
   // Client-side mirror of the backend rules (max 10 000, positive number) so
@@ -222,8 +210,9 @@ export default function BuyFlow() {
     }
   }
 
-  // semi_auto doesn't depend on the Paynow config that `configured` reports.
-  if (live === false && PAYMENT_MODE !== "semi_auto") {
+  // Never render a payment form the backend will refuse: /order and /initiate
+  // both reject unless the function is in a live mode.
+  if (!health.loading && !purchasable) {
     return (
       <div className="rounded-xl border border-line bg-card p-8 text-center">
         <p className="font-display text-xl font-bold">Token purchases are almost here<BoltIcon className="ml-1.5 inline-block h-4 w-4 -translate-y-px align-middle text-volt-deep" /></p>

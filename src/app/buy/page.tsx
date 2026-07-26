@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import BuyFlow from "@/components/BuyFlow";
-
-// Build-time payment mode (static export) — keep in sync with BuyFlow.tsx.
-const PAYMENT_MODE = process.env.NEXT_PUBLIC_PAYMENT_MODE || "coming_soon";
+import { BuyPitch, PayStep } from "@/components/BuyPitch";
 
 export const metadata: Metadata = {
-  title: "Buy ZESA Tokens Online — EcoCash, Zimswitch, USD & ZWG",
+  title: "Buy ZESA Tokens Online in Zimbabwe — EcoCash, Zimswitch, USD & ZWG",
   description:
-    "Buy prepaid ZESA electricity tokens online in minutes. Pay with EcoCash, Zimswitch, InnBucks or bank — in US dollars or ZWG. Token delivered instantly on screen and by SMS.",
+    "Buy prepaid ZESA electricity tokens online in Zimbabwe. Verify your ZETDC meter, pay with EcoCash, Zimswitch, InnBucks or bank in USD or ZWG, and get the token on screen and by SMS.",
   alternates: { canonical: "/buy/" },
 };
 
@@ -21,20 +19,7 @@ export default function BuyPage() {
         <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
           Buy ZESA tokens<span className="text-volt-deep">.</span>
         </h1>
-        <p className="mt-3 text-dim">
-          {PAYMENT_MODE === "semi_auto" ? (
-            <>
-              Verify your meter, pay by <strong className="text-ink">EcoCash</strong> from your
-              own phone, and get your token on screen and by SMS. No queues, no airtime hassle.
-            </>
-          ) : (
-            <>
-              Verify your meter, pay with EcoCash, Zimswitch or your bank — in{" "}
-              <strong className="text-ink">USD or ZWG</strong> — and get your token on screen
-              and by SMS. No queues, no airtime hassle.
-            </>
-          )}
-        </p>
+        <BuyPitch />
         <div className="mt-8">
           <BuyFlow />
         </div>
@@ -46,11 +31,7 @@ export default function BuyPage() {
           </div>
           <div className="rounded-lg border border-line bg-card p-4">
             <p className="font-display font-semibold">2. Pay securely</p>
-            <p className="mt-1 text-dim">
-              {PAYMENT_MODE === "semi_auto"
-                ? "Pay by EcoCash from your own phone — we never see your PIN."
-                : "Checkout happens on Paynow — we never see your PIN or card."}
-            </p>
+            <PayStep />
           </div>
           <div className="rounded-lg border border-line bg-card p-4">
             <p className="font-display font-semibold">3. Get your token</p>
