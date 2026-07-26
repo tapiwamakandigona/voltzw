@@ -427,10 +427,12 @@ export default function BuyFlow() {
               </p>
             ) : feePct === null && amt > 0 ? (
               // /health failed, so the exact split is unknown — still
-              // disclose the fee instead of hiding it.
+              // disclose the fee instead of hiding it. Deliberately no number
+              // here: the rate lives in SERVICE_FEE_PCT and a hardcoded one
+              // goes stale the moment it changes.
               <p className="mt-5 rounded-lg border border-line bg-paper px-4 py-2.5 text-xs text-dim">
-                A 10% service fee applies and is included in the amount you pay — the rest becomes
-                your electricity token value.
+                A service fee applies and is included in the amount you pay — the rest becomes your
+                electricity token value. The exact split is shown before you pay.
               </p>
             ) : null}
 
