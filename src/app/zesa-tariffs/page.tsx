@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { TARIFFS, BANDS, TARIFF_MONTH_LABEL, costForUnits, fmt, zwgToUsd } from "@/lib/tariff";
+import { TARIFFS, BANDS, costForUnits, fmt, zwgToUsd } from "@/lib/tariff";
 import { BulbIcon, WrenchIcon } from "@/components/icons";
 import { FIRST_DATE, HISTORY } from "@/lib/history";
 import { breadcrumb, jsonLdProps, tariffDataset } from "@/lib/seo";
