@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, Inter } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+import { ORGANIZATION, WEBSITE, jsonLdProps } from "@/lib/seo";
 
 const display = Space_Grotesk({ variable: "--font-display", subsets: ["latin"] });
 const body = Inter({ variable: "--font-body", subsets: ["latin"] });
@@ -11,11 +12,11 @@ const SITE = "https://zesa.tapiwa.me";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: {
-    default: "VoltZW — Free ZESA Calculator, Tariffs & Token Help for Zimbabwe",
+    default: "VoltZW — Free ZESA Calculator & ZETDC Tariffs for Zimbabwe",
     template: "%s · VoltZW",
   },
   description:
-    "Free ZESA electricity calculator with current ZETDC stepped tariffs, token retrieval help, and smart tips to stay in the cheap bands. Built for Zimbabwe.",
+    "Free ZESA electricity calculator for Zimbabwe (ZETDC) with the current stepped tariffs verified daily, token retrieval help, and the quota tricks that keep you in the cheap bands.",
   keywords: [
     "ZESA calculator", "ZESA tariffs", "ZESA token", "retrieve ZESA token",
     "ZETDC", "check ZESA balance online", "ZESA units calculator", "electricity Zimbabwe",
@@ -33,6 +34,10 @@ export const metadata: Metadata = {
     description: "Calculator with live tariffs, token retrieval help, and the stepped-tariff tricks that save you money.",
   },
   robots: { index: true, follow: true },
+  alternates: { canonical: "/" },
+  // Explicit geo signals: the audience is Zimbabwe, and unqualified "ZESA"
+  // impressions from other countries were converting at ~0.2%.
+  other: { "geo.region": "ZW", "geo.placename": "Zimbabwe" },
 };
 
 // Next.js 16: viewport options (incl. themeColor) are exported separately
@@ -81,6 +86,8 @@ function Footer() {
             <li><Link href="/" className="inline-flex min-h-11 items-center hover:text-volt">ZESA calculator</Link></li>
             <li><Link href="/zesa-tariffs/" className="inline-flex min-h-11 items-center hover:text-volt">Current ZESA tariffs</Link></li>
             <li><Link href="/retrieve-zesa-token/" className="inline-flex min-h-11 items-center hover:text-volt">Retrieve a lost token</Link></li>
+            <li><Link href="/units/" className="inline-flex min-h-11 items-center hover:text-volt">Units per amount</Link></li>
+            <li><Link href="/zesa-tariffs/history/" className="inline-flex min-h-11 items-center hover:text-volt">Tariff history &amp; free data</Link></li>
           </ul>
         </div>
         <div className="text-sm">
@@ -112,6 +119,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         >
           Skip to content
         </a>
+        <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdProps(ORGANIZATION, WEBSITE)} />
         <Header />
         <main id="main">{children}</main>
         <Footer />

@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Calculator from "@/components/Calculator";
+import { AMOUNT_PAGES } from "@/lib/amounts";
+import { FIRST_DATE, HISTORY, totalDriftPct } from "@/lib/history";
 import { TARIFFS, MONTHLY_QUOTA, TARIFF_MONTH_LABEL, remainingQuota, zwgToUsd, fmt } from "@/lib/tariff";
 
 export const metadata: Metadata = {
-  title: `ZESA Calculator — ${TARIFF_MONTH_LABEL} ZETDC Tariffs, Money to Units (Free)`,
-  description: `Free ZESA token calculator for Zimbabwe, updated for the ${TARIFF_MONTH_LABEL} ZETDC tariffs. See exactly how many units (kWh) your money buys — all six stepped bands, the 6% REA levy and your 400 kWh monthly quota included.`,
+  title: `ZESA Calculator Zimbabwe — Money to Units at Today's ZETDC Tariffs (${TARIFFS.effectiveDate})`,
+  description: `Free ZESA token calculator for Zimbabwe (ZETDC), on the ZERA-approved tariffs effective ${TARIFFS.effectiveDate} — verified daily, not monthly. See exactly how many units (kWh) your money buys: all six stepped bands, the 6% REA levy and your 400 kWh quota.`,
   alternates: { canonical: "/" },
 };
 
@@ -15,6 +17,11 @@ export const metadata: Metadata = {
 const fullQuotaZwg = remainingQuota(0).costZwg;
 const quotaCostZwg = fmt(fullQuotaZwg);
 const quotaCostUsd = fmt(zwgToUsd(fullQuotaZwg));
+
+// The amounts that carry the "how many units is X" queries.
+const POPULAR = AMOUNT_PAGES.filter((p) =>
+  ["zwg-100", "zwg-200", "zwg-500", "zwg-1000", "zwg-2000", "usd-2", "usd-5", "usd-10", "usd-20"].includes(p.slug),
+);
 
 const faqs = [
   {
@@ -113,6 +120,36 @@ export default function Home() {
             <p className="mt-4 text-sm font-semibold text-volt-deep group-hover:underline">{c.cta} →</p>
           </Link>
         ))}
+      </section>
+
+      <section className="container-page mt-14">
+        <h2 className="font-display text-2xl font-bold">Common amounts, worked out</h2>
+        <p className="mt-2 max-w-2xl text-dim">
+          Today&apos;s answer for the amounts people actually buy — recalculated every time ZERA
+          changes the rates.
+        </p>
+        <ul className="mt-5 flex flex-wrap gap-2">
+          {POPULAR.map((p) => (
+            <li key={p.slug}>
+              <Link
+                href={`/units/${p.slug}/`}
+                className="inline-flex min-h-11 items-center rounded-lg border border-line bg-card px-3 text-sm hover:border-volt"
+              >
+                <span className="font-medium">{p.display}</span>
+                <span className="ml-2 tabular-nums text-dim">{fmt(p.units, 1)} kWh</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-5 text-sm text-dim">
+          ZESA prices move with the ZWG — the entry band has shifted{" "}
+          {totalDriftPct() >= 0 ? "+" : ""}{fmt(totalDriftPct(), 1)}% across {HISTORY.length}{" "}
+          schedules since {FIRST_DATE}.{" "}
+          <Link href="/zesa-tariffs/history/" className="underline hover:text-volt-deep">
+            See the full tariff history
+          </Link>{" "}
+          — free as JSON and CSV.
+        </p>
       </section>
 
       <section id="buy" className="container-page mt-16">
