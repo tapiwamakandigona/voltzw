@@ -1,0 +1,46 @@
+name: Deploy site
+
+# Site changes used to reach production only when the tariff sync happened to
+# find new rates — its deploy step is gated on `changed == true`. A merge to
+# main that touched pages could therefore sit unpublished for days. This
+# publishes on every push to main, and on demand.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "functions/**"
+      - "**/*.md"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-site
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Never publish a broken export: the build gates the deploy.
+      - name: Build (static export)
+        run: npm run build
+
+      - name: Deploy to Appwrite
+        env:
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+        run: |
+          npx --yes appwrite-cli client \
+            --endpoint https://fra.cloud.appwrite.io/v1 \
+            --project-id voltzw \
+            --key "$APPWRITE_API_KEY"
+          npx --yes appwrite-cli sites create-deployment \
+            --site-id voltzw-web --code . --activate true
