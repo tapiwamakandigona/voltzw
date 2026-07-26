@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Calculator from "@/components/Calculator";
+import BuyPromo from "@/components/BuyPromo";
 import { AMOUNT_PAGES } from "@/lib/amounts";
 import { FIRST_DATE, HISTORY, totalDriftPct } from "@/lib/history";
-import { TARIFFS, MONTHLY_QUOTA, TARIFF_MONTH_LABEL, remainingQuota, zwgToUsd, fmt } from "@/lib/tariff";
+import { TARIFFS, MONTHLY_QUOTA, remainingQuota, zwgToUsd, fmt } from "@/lib/tariff";
 
 export const metadata: Metadata = {
   title: `ZESA Calculator Zimbabwe — Money to Units at Today's ZETDC Tariffs (${TARIFFS.effectiveDate})`,
@@ -110,7 +111,7 @@ export default function Home() {
           {
             href: "/buy/",
             title: "Buy tokens online",
-            desc: "Pay with EcoCash in USD or ZWG and get your token on screen and by SMS — no account needed.",
+            desc: "Verify any ZETDC meter, then pay with EcoCash in USD or ZWG — token on screen and by SMS, no account needed.",
             cta: "Buy now",
           },
         ].map((c) => (
@@ -152,22 +153,7 @@ export default function Home() {
         </p>
       </section>
 
-      <section id="buy" className="container-page mt-16">
-        <div className="rounded-2xl bg-ink p-6 text-white sm:p-10">
-          <h2 className="font-display text-2xl font-bold">Buy ZESA tokens on VoltZW — <span className="text-volt">live now</span></h2>
-          <p className="mt-3 max-w-2xl leading-relaxed text-white/70">
-            Pay with EcoCash and other Paynow methods, in <strong className="text-white">USD or ZWG</strong>. We verify your
-            meter first, then your 20-digit token appears on screen and is sent by SMS. Every purchase stays attached to
-            your meter number — a lost SMS never means a lost token. Perfect for topping up a family meter from the diaspora.
-          </p>
-          <Link
-            href="/buy/"
-            className="mt-5 inline-block rounded-lg bg-volt px-6 py-3 font-semibold text-ink transition hover:bg-volt/80"
-          >
-            Buy tokens now →
-          </Link>
-        </div>
-      </section>
+      <BuyPromo />
 
       <section className="container-page mt-16 max-w-3xl">
         <h2 className="font-display text-2xl font-bold">ZESA calculator — frequently asked questions</h2>
