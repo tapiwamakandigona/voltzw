@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { TARIFFS } from "@/lib/tariff";
-import { AMOUNT_SLUGS } from "@/lib/amounts";
+import { AMOUNT_SLUGS, UNIT_SLUGS } from "@/lib/amounts";
 import { monthKeys } from "@/lib/history";
 
 export const dynamic = "force-static";
@@ -20,7 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/retrieve-zesa-token/`, changeFrequency: "monthly", priority: 0.9 },
   ];
 
-  const amounts: MetadataRoute.Sitemap = AMOUNT_SLUGS.map((slug) => ({
+  const amounts: MetadataRoute.Sitemap = [...AMOUNT_SLUGS, ...UNIT_SLUGS].map((slug) => ({
     url: `${base}/units/${slug}/`,
     lastModified,
     changeFrequency: "daily",

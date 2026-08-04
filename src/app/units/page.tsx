@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AMOUNT_PAGES } from "@/lib/amounts";
+import { AMOUNT_PAGES, UNIT_PAGES } from "@/lib/amounts";
 import { TARIFFS, RATE, fmt } from "@/lib/tariff";
 import { breadcrumb, jsonLdProps } from "@/lib/seo";
 
@@ -58,6 +58,27 @@ export default function UnitsIndex() {
       <section className="container-page mt-10 grid gap-10 sm:grid-cols-2">
         {table(zwg, "In ZWG")}
         {table(usd, "In US dollars")}
+      </section>
+
+      <section className="container-page mt-10">
+        <h2 className="font-display text-xl font-bold">Cost of a given number of units</h2>
+        <p className="mt-2 max-w-2xl text-sm text-dim">
+          Working the other way — what a fixed number of units costs as a first purchase of the
+          month.
+        </p>
+        <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+          {UNIT_PAGES.map((p) => (
+            <li key={p.slug}>
+              <Link
+                href={`/units/${p.slug}/`}
+                className="flex min-h-11 items-center justify-between rounded-lg border border-line bg-card px-4 text-sm hover:border-volt"
+              >
+                <span className="font-medium">{p.display}</span>
+                <span className="tabular-nums text-dim">ZWG {fmt(p.costZwg)}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section className="container-page mt-10">
