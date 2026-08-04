@@ -1,58 +1,22 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { AMOUNT_PAGES, UNIT_PAGES, findAmountPage, findUnitPage, siblings, unitSiblings } from "@/lib/amounts";
-import { TARIFFS, MONTHLY_QUOTA, RATE, fmt, unitsForAmount, zwgToUsd } from "@/lib/tariff";
+import type { UnitPage } from "@/lib/amounts";
+import { TARIFFS, MONTHLY_QUOTA, fmt, costForUnits } from "@/lib/tariff";
 import { breadcrumb, jsonLdProps } from "@/lib/seo";
-import { UnitCostPage } from "./unit-cost";
 
-export const dynamic = "force-static";
-
-export function generateStaticParams() {
-  return [
-    ...AMOUNT_PAGES.map((p) => ({ slug: p.slug })),
-    ...UNIT_PAGES.map((p) => ({ slug: p.slug })),
-  ];
-}
-
-type Props = { params: Promise<{ slug: string }> };
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
-  const unitPage = findUnitPage(slug);
-  if (unitPage) {
-    return {
-      title: `How Much Is ${unitPage.units} Units of ZESA? ZWG ${fmt(unitPage.costZwg)} / ≈ US$${fmt(unitPage.costUsd)} (${TARIFFS.effectiveDate})`,
-      description: `${unitPage.units} units (kWh) of ZESA prepaid electricity costs ZWG ${fmt(unitPage.costZwg)} — about US$${fmt(unitPage.costUsd)} — at the ZERA-approved ZETDC tariffs effective ${TARIFFS.effectiveDate}, including the 6% REA levy. Band-by-band breakdown, updated daily.`,
-      alternates: { canonical: `/units/${unitPage.slug}/` },
-    };
-  }
-  const page = findAmountPage(slug);
-  if (!page) return {};
-  const units = fmt(page.units, 1);
-  return {
-    title: `How many ZESA units is ${page.display}? ${units} kWh in Zimbabwe (${TARIFFS.effectiveDate})`,
-    description: `${page.display} buys ${units} kWh of ZESA prepaid electricity at the ZERA-approved ZETDC tariffs effective ${TARIFFS.effectiveDate}, including the 6% REA levy. Full band-by-band breakdown for Zimbabwe, updated daily.`,
-    alternates: { canonical: `/units/${page.slug}/` },
-  };
-}
-
-export default async function UnitsPage({ params }: Props) {
-  const { slug } = await params;
-  const unitPage = findUnitPage(slug);
-  if (unitPage) return <UnitCostPage page={unitPage} others={unitSiblings(unitPage)} />;
-  const page = findAmountPage(slug);
-  if (!page) notFound();
-
-  const { totalUnits, slices } = unitsForAmount(page.amountZwg);
-  const usd = zwgToUsd(page.amountZwg);
-  const quotaShare = (totalUnits / MONTHLY_QUOTA) * 100;
-  const others = siblings(page, 6);
+/** Static "how much is N units of ZESA" page — the inverse of the
+ *  money→units amount pages, sharing the same band maths and daily sync. */
+export function UnitCostPage({ page, others }: { page: UnitPage; others: UnitPage[] }) {
+  const { totalZwg, slices } = costForUnits(page.units);
+  const quotaShare = (page.units / MONTHLY_QUOTA) * 100;
 
   const faq = [
     {
-      q: `Is ${page.display} of ZESA always ${fmt(totalUnits, 1)} units?`,
-      a: `No. ZESA uses a stepped tariff, so the answer depends on how much you have already bought this calendar month. ${fmt(totalUnits, 1)} kWh assumes this is your first purchase of the month, starting from the cheapest band. Later purchases in the same month buy fewer units for the same money.`,
+      q: `Is ${page.units} units of ZESA always ZWG ${fmt(totalZwg)}?`,
+      a: `No. ZESA uses a stepped tariff, so the price depends on how much you have already bought this calendar month. ZWG ${fmt(totalZwg)} assumes this is your first purchase of the month, starting from the cheapest band. Later purchases in the same month cost more per unit.`,
+    },
+    {
+      q: "Can I pay for ZESA in US dollars?",
+      a: `ZETDC bills in ZWG. The ≈ US$${fmt(page.costUsd)} figure uses the published reference rate of about ${fmt(TARIFFS.zwgPerUsdApprox, 1)} ZWG per US$; USD payment channels convert at the rate they offer on the day.`,
     },
     {
       q: "Do these prices include the REA levy?",
@@ -61,7 +25,7 @@ export default async function UnitsPage({ params }: Props) {
   ];
 
   const jsonLd = [
-    breadcrumb([["ZESA amounts", "/units/"], [`${page.display}`, `/units/${page.slug}/`]]),
+    breadcrumb([["ZESA amounts", "/units/"], [page.display, `/units/${page.slug}/`]]),
     {
       "@context": "https://schema.org",
       "@type": "FAQPage",
@@ -83,27 +47,21 @@ export default async function UnitsPage({ params }: Props) {
             ZETDC tariffs effective {TARIFFS.effectiveDate}
           </p>
           <h1 className="font-display mt-3 text-3xl font-bold sm:text-4xl">
-            How many ZESA units is {page.display}
+            How much is {page.units} units of ZESA
             <span aria-hidden className="text-volt">?</span>
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-white/80">
-            {page.display} buys{" "}
-            <strong className="text-volt">{fmt(totalUnits, 1)} kWh</strong> of prepaid electricity
-            in Zimbabwe — as your first purchase this month, including the 6% REA levy.
+            {page.units} units (kWh) of prepaid electricity costs{" "}
+            <strong className="text-volt">ZWG {fmt(totalZwg)}</strong> — about US$
+            {fmt(page.costUsd)} — as your first purchase this month, including the 6% REA levy.
           </p>
-          {page.currency === "USD" && (
-            <p className="mt-2 text-sm text-white/60">
-              Converted at the published reference rate of ≈ {fmt(RATE, 1)} ZWG per US$, i.e. about
-              ZWG {fmt(page.amountZwg)}. You pay ZETDC in ZWG unless you use a USD channel.
-            </p>
-          )}
         </div>
       </section>
 
       <section className="container-page mt-10">
         <h2 className="font-display text-2xl font-bold">Band-by-band breakdown</h2>
         <p className="mt-2 max-w-2xl text-dim">
-          ZESA charges in six steps each month. Here is exactly where {page.display} lands.
+          ZESA charges in six steps each month. Here is exactly what {page.units} units costs.
         </p>
         <div className="mt-5 rounded-2xl border border-line bg-card shadow-sm">
           <div className="overflow-x-auto rounded-2xl">
@@ -127,10 +85,10 @@ export default async function UnitsPage({ params }: Props) {
                 ))}
                 <tr className="bg-paper font-semibold">
                   <td className="px-2 py-3 sm:px-4">Total</td>
-                  <td className="px-2 py-3 text-right tabular-nums sm:px-4">{fmt(totalUnits, 1)}</td>
+                  <td className="px-2 py-3 text-right tabular-nums sm:px-4">{fmt(page.units, 1)}</td>
                   <td className="px-2 py-3 text-right sm:px-4">—</td>
                   <td className="px-2 py-3 text-right tabular-nums sm:px-4">
-                    ZWG {fmt(page.amountZwg)} <span className="font-normal text-dim">(≈ US${fmt(usd)})</span>
+                    ZWG {fmt(totalZwg)} <span className="font-normal text-dim">(≈ US${fmt(page.costUsd)})</span>
                   </td>
                 </tr>
               </tbody>
@@ -147,8 +105,9 @@ export default async function UnitsPage({ params }: Props) {
         <div className="rounded-2xl border border-line bg-card p-6 shadow-sm">
           <h2 className="font-display text-xl font-bold">Already bought units this month?</h2>
           <p className="mt-2 text-dim">
-            Then {page.display} buys less than {fmt(totalUnits, 1)} kWh, because your cheap bands are
-            already used. The calculator takes that into account — enter what you have bought so far.
+            Then {page.units} units costs more than ZWG {fmt(totalZwg)}, because your cheap bands
+            are already used. The calculator takes that into account — enter what you have bought so
+            far.
           </p>
           <Link
             href="/"
@@ -160,7 +119,7 @@ export default async function UnitsPage({ params }: Props) {
       </section>
 
       <section className="container-page mt-10">
-        <h2 className="font-display text-2xl font-bold">Other amounts</h2>
+        <h2 className="font-display text-2xl font-bold">Other unit amounts</h2>
         <ul className="mt-4 flex flex-wrap gap-2">
           {others.map((o) => (
             <li key={o.slug}>
@@ -168,7 +127,7 @@ export default async function UnitsPage({ params }: Props) {
                 href={`/units/${o.slug}/`}
                 className="inline-flex min-h-11 items-center rounded-lg border border-line bg-card px-3 text-sm hover:border-volt"
               >
-                {o.display} = {fmt(o.units, 1)} kWh
+                {o.display} = ZWG {fmt(o.costZwg)}
               </Link>
             </li>
           ))}
