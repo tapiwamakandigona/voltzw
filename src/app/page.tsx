@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Calculator from "@/components/Calculator";
 import BuyPromo from "@/components/BuyPromo";
-import { AMOUNT_PAGES } from "@/lib/amounts";
+import { AMOUNT_PAGES, UNIT_PAGES } from "@/lib/amounts";
 import { FIRST_DATE, HISTORY, totalDriftPct } from "@/lib/history";
 import { TARIFFS, MONTHLY_QUOTA, remainingQuota, zwgToUsd, fmt } from "@/lib/tariff";
 
@@ -142,6 +142,31 @@ export default function Home() {
             </li>
           ))}
         </ul>
+        <h3 className="font-display mt-8 text-lg font-bold">Or start from the units</h3>
+        <p className="mt-2 max-w-2xl text-sm text-dim">
+          What a fixed number of units costs today — and what each one actually runs in the house.
+        </p>
+        <ul className="mt-4 flex flex-wrap gap-2">
+          {UNIT_PAGES.map((u) => (
+            <li key={u.slug}>
+              <Link
+                href={`/units/${u.slug}/`}
+                className="inline-flex min-h-11 items-center rounded-lg border border-line bg-card px-3 text-sm hover:border-volt"
+              >
+                <span className="font-medium">{u.display}</span>
+                <span className="ml-2 tabular-nums text-dim">ZWG {fmt(u.costZwg)}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-4 text-sm text-dim">
+          <Link href="/units/" className="font-medium underline hover:text-volt-deep">
+            See every amount and unit count in one table
+          </Link>{" "}
+          — ZWG 50 to ZWG 5,000, US$1 to US$100, and 50 to 400 units, with the effective price per
+          kWh for each.
+        </p>
+
         <p className="mt-5 text-sm text-dim">
           ZESA prices move with the ZWG — the entry band has shifted{" "}
           {totalDriftPct() >= 0 ? "+" : ""}{fmt(totalDriftPct(), 1)}% across {HISTORY.length}{" "}

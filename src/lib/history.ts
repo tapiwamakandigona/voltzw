@@ -1,4 +1,5 @@
 import raw from "@/data/tariff-history.json";
+import { BANDS, costForUnits, type Band } from "@/lib/tariff";
 
 /** One published tariff schedule, keyed by the date it took effect.
  *  `base`/`incl` are the six band prices in ZWG per kWh (index 0 = first 50
@@ -129,4 +130,39 @@ export function sparklinePoints(values: number[], w: number, h: number, pad = 4)
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     })
     .join(" ");
+}
+
+/** Rebuild a full `Band[]` for a historical snapshot: band boundaries and
+ *  labels have never changed, only the per-kWh prices, so the current bands
+ *  are reused with that day's prices substituted. Lets any page price the
+ *  same purchase under an older schedule. */
+export function bandsAt(s: Snapshot): Band[] {
+  return BANDS.map((b, i) => ({
+    ...b,
+    baseZwg: s.base[i] ?? b.baseZwg,
+    inclLevyZwg: s.incl[i] ?? b.inclLevyZwg,
+    usdApprox: s.fx > 0 ? (s.incl[i] ?? b.inclLevyZwg) / s.fx : b.usdApprox,
+  }));
+}
+
+/** The most recent snapshot whose prices differ from today's — i.e. the
+ *  schedule that was in force before the current one. Null when the record
+ *  only ever contains one set of prices. */
+export function previousDifferentSnapshot(): Snapshot | null {
+  if (!LATEST) return null;
+  for (let i = HISTORY.length - 2; i >= 0; i--) {
+    if (HISTORY[i].incl.some((v, j) => v !== LATEST.incl[j])) return HISTORY[i];
+  }
+  return null;
+}
+
+/** What `units` kWh cost under the previous schedule, and the % change since,
+ *  for pages that want to show movement instead of a bare number. */
+export function priceChangeForUnits(units: number): { then: number; thenDate: string; pct: number } | null {
+  const prev = previousDifferentSnapshot();
+  if (!prev) return null;
+  const then = costForUnits(units, 0, bandsAt(prev)).totalZwg;
+  const now = costForUnits(units).totalZwg;
+  if (then <= 0) return null;
+  return { then, thenDate: prev.d, pct: ((now - then) / then) * 100 };
 }
