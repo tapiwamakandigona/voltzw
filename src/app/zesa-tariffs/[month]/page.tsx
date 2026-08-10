@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { monthKeys, monthLabel, monthRange, snapshotsForMonth } from "@/lib/history";
+import { monthKeys, monthLabel, monthRange, rateInForce, snapshotsForMonth } from "@/lib/history";
 import { fmt, zwgToUsd } from "@/lib/tariff";
 import { breadcrumb, jsonLdProps } from "@/lib/seo";
 
@@ -18,19 +18,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const range = monthRange(month);
   if (!range) return {};
   const label = monthLabel(month);
+  const published = snapshotsForMonth(month).length;
+  const flat = range.min === range.max;
   return {
-    title: `ZESA Tariffs ${label} — ZETDC Rates for Zimbabwe, Day by Day`,
-    description: `What ZESA (ZETDC) prepaid electricity cost in ${label}: the entry band ranged from ZWG ${fmt(range.min, 4)} to ZWG ${fmt(range.max, 4)} per kWh incl. the 6% REA levy. Every schedule published that month.`,
+    title: published
+      ? `ZESA Tariffs ${label} — ZETDC Rates for Zimbabwe, Day by Day`
+      : `ZESA Tariffs ${label} — ZWG ${fmt(range.min, 4)}/unit, the ZETDC Rate in Force`,
+    description: published
+      ? `What ZESA (ZETDC) prepaid electricity cost in ${label}: the entry band ${flat ? `held at ZWG ${fmt(range.min, 4)}` : `ranged from ZWG ${fmt(range.min, 4)} to ZWG ${fmt(range.max, 4)}`} per kWh incl. the 6% REA levy. Every schedule published that month.`
+      : `ZESA (ZETDC) published no new tariff schedule in ${label}, so the entry band stayed at ZWG ${fmt(range.min, 4)} per kWh incl. the 6% REA levy all month. Here is the schedule that was in force, and what changed either side of it.`,
     alternates: { canonical: `/zesa-tariffs/${month}/` },
   };
 }
 
 export default async function MonthPage({ params }: Props) {
   const { month } = await params;
-  const rows = snapshotsForMonth(month);
+  const published = snapshotsForMonth(month);
+  const held = rateInForce(month);
   const range = monthRange(month);
-  if (!rows.length || !range) notFound();
+  if (!range || (!published.length && !held)) notFound();
 
+  // A month with no publication of its own still had a price: the previous
+  // schedule remained in force. Show that row, labelled as carried over.
+  const rows = published.length ? published : [held!];
   const label = monthLabel(month);
   const months = monthKeys();
   const idx = months.indexOf(month);
@@ -54,17 +64,30 @@ export default async function MonthPage({ params }: Props) {
       <section className="border-b border-line bg-ink text-white">
         <div className="container-page py-12">
           <p className="text-xs font-semibold uppercase tracking-widest text-volt">
-            Archive · {rows.length} schedule{rows.length === 1 ? "" : "s"} recorded
+            {published.length
+              ? `Archive · ${published.length} schedule${published.length === 1 ? "" : "s"} recorded`
+              : "Archive · no new schedule published"}
           </p>
           <h1 className="font-display mt-3 text-3xl font-bold sm:text-4xl">
             ZESA tariffs, {label}
             <span aria-hidden className="text-volt">.</span>
           </h1>
-          <p className="mt-3 max-w-2xl text-white/70">
-            The first 50 units cost between ZWG {fmt(range.min, 4)} and ZWG {fmt(range.max, 4)} per
-            kWh that month, including the 6% REA levy. Rates move with the ZWG, so a monthly figure
-            is a range, not a number.
-          </p>
+          {published.length ? (
+            <p className="mt-3 max-w-2xl text-white/70">
+              The first 50 units cost{" "}
+              {range.min === range.max
+                ? `ZWG ${fmt(range.min, 4)}`
+                : `between ZWG ${fmt(range.min, 4)} and ZWG ${fmt(range.max, 4)}`}{" "}
+              per kWh that month, including the 6% REA levy. Rates move with the ZWG, so a monthly
+              figure is a range, not a number.
+            </p>
+          ) : (
+            <p className="mt-3 max-w-2xl text-white/70">
+              ZETDC published no new schedule in {label}, so the {rows[0].d} rates stayed in force
+              for the whole month: ZWG {fmt(range.min, 4)} per kWh for the first 50 units, including
+              the 6% REA levy.
+            </p>
+          )}
           <p className="mt-4 text-sm">
             <Link href="/zesa-tariffs/" className="underline hover:text-volt">
               See today&apos;s rates instead →
@@ -74,7 +97,15 @@ export default async function MonthPage({ params }: Props) {
       </section>
 
       <section className="container-page mt-10">
-        <h2 className="font-display text-2xl font-bold">Schedules published in {label}</h2>
+        <h2 className="font-display text-2xl font-bold">
+          {published.length ? `Schedules published in ${label}` : `The schedule in force during ${label}`}
+        </h2>
+        {!published.length && (
+          <p className="mt-2 max-w-2xl text-sm text-dim">
+            Carried over from {rows[0].d} — ZESA tariffs stay valid until ZERA approves a new
+            schedule, so this is what a {label} purchase actually cost.
+          </p>
+        )}
         <div className="mt-5 rounded-2xl border border-line bg-card shadow-sm">
           <div className="overflow-x-auto rounded-2xl">
             <table className="w-full text-xs sm:text-sm">
