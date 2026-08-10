@@ -3,6 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AMOUNT_PAGES, UNIT_PAGES, findAmountPage, findUnitPage, siblings, unitSiblings } from "@/lib/amounts";
 import { TARIFFS, MONTHLY_QUOTA, RATE, fmt, unitsForAmount, zwgToUsd } from "@/lib/tariff";
+import { WhatItRuns } from "@/components/WhatItRuns";
+import { formatDuration, daysOfQuotaUse } from "@/lib/appliances";
+import { monthLabel, priceChangeForUnits } from "@/lib/history";
+import { AMOUNT_COPY } from "@/lib/copy";
 import { breadcrumb, jsonLdProps } from "@/lib/seo";
 import { UnitCostPage } from "./unit-cost";
 
@@ -48,11 +52,21 @@ export default async function UnitsPage({ params }: Props) {
   const usd = zwgToUsd(page.amountZwg);
   const quotaShare = (totalUnits / MONTHLY_QUOTA) * 100;
   const others = siblings(page, 6);
+  const move = priceChangeForUnits(totalUnits);
+  // The units-first page closest to what this amount buys, so both directions
+  // of the same question are one click apart.
+  const nearestUnitPage = [...UNIT_PAGES].sort(
+    (a, b) => Math.abs(a.units - totalUnits) - Math.abs(b.units - totalUnits),
+  )[0];
 
   const faq = [
     {
       q: `Is ${page.display} of ZESA always ${fmt(totalUnits, 1)} units?`,
       a: `No. ZESA uses a stepped tariff, so the answer depends on how much you have already bought this calendar month. ${fmt(totalUnits, 1)} kWh assumes this is your first purchase of the month, starting from the cheapest band. Later purchases in the same month buy fewer units for the same money.`,
+    },
+    {
+      q: `How long does ${page.display} of ZESA last?`,
+      a: `${page.display} buys ${fmt(totalUnits, 1)} kWh, which is about ${formatDuration(daysOfQuotaUse(totalUnits) * 24)} for a household that would otherwise use its full ${MONTHLY_QUOTA} kWh monthly quota (≈ ${fmt(MONTHLY_QUOTA / 30, 1)} kWh a day). Use less than that and it lasts proportionally longer.`,
     },
     {
       q: "Do these prices include the REA levy?",
@@ -100,6 +114,12 @@ export default async function UnitsPage({ params }: Props) {
         </div>
       </section>
 
+      {AMOUNT_COPY[page.slug] ? (
+        <section className="container-page mt-8 max-w-3xl">
+          <p className="text-lg leading-relaxed">{AMOUNT_COPY[page.slug]}</p>
+        </section>
+      ) : null}
+
       <section className="container-page mt-10">
         <h2 className="font-display text-2xl font-bold">Band-by-band breakdown</h2>
         <p className="mt-2 max-w-2xl text-dim">
@@ -141,6 +161,58 @@ export default async function UnitsPage({ params }: Props) {
           That is {fmt(quotaShare, 0)}% of your {MONTHLY_QUOTA} kWh discounted monthly quota. Anything
           above the quota in the same month is charged at the top band rate.
         </p>
+      </section>
+
+      <WhatItRuns units={totalUnits} label={page.display} />
+
+      <section className="container-page mt-10">
+        <div className="rounded-2xl border border-line bg-card p-6 shadow-sm">
+          <h2 className="font-display text-xl font-bold">Versus the last schedule</h2>
+          {move ? (
+            <p className="mt-2 text-dim">
+              The same {fmt(totalUnits, 1)} kWh cost{" "}
+              <strong className="text-ink">ZWG {fmt(move.then)}</strong> under the schedule effective{" "}
+              {move.thenDate} ({monthLabel(move.thenDate.slice(0, 7))}) — a change of{" "}
+              <strong className="text-ink">
+                {move.pct >= 0 ? "+" : ""}
+                {fmt(move.pct, 1)}%
+              </strong>
+              , which is why the same note buys a different number of units month to month.{" "}
+              <Link href="/zesa-tariffs/history/" className="underline hover:text-volt-deep">
+                See every schedule
+              </Link>
+              .
+            </p>
+          ) : (
+            <p className="mt-2 text-dim">
+              Only one schedule is on record so far, so there is nothing to compare against yet.
+            </p>
+          )}
+        </div>
+      </section>
+
+      <section className="container-page mt-10">
+        <h2 className="font-display text-2xl font-bold">Or start from the units</h2>
+        <p className="mt-2 max-w-2xl text-dim">
+          Working the other way round — what a fixed number of units costs as a first purchase this
+          month. {page.display} lands nearest to{" "}
+          <Link href={`/units/${nearestUnitPage.slug}/`} className="underline hover:text-volt-deep">
+            {nearestUnitPage.display}
+          </Link>
+          .
+        </p>
+        <ul className="mt-4 flex flex-wrap gap-2">
+          {UNIT_PAGES.map((u) => (
+            <li key={u.slug}>
+              <Link
+                href={`/units/${u.slug}/`}
+                className="inline-flex min-h-11 items-center rounded-lg border border-line bg-card px-3 text-sm hover:border-volt"
+              >
+                {u.display} = ZWG {fmt(u.costZwg)}
+              </Link>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section className="container-page mt-10">

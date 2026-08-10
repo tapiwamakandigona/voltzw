@@ -35,13 +35,13 @@ function sanitize(n: number): number {
 
 /** Total ZWG cost (incl REA levy) to buy `units` kWh, given `alreadyBought`
  *  units purchased earlier this calendar month. */
-export function costForUnits(units: number, alreadyBought = 0): { totalZwg: number; slices: BandSlice[] } {
+export function costForUnits(units: number, alreadyBought = 0, bands: Band[] = BANDS): { totalZwg: number; slices: BandSlice[] } {
   let remaining = sanitize(units);
   let position = sanitize(alreadyBought); // units consumed from the stepped ladder
   const slices: BandSlice[] = [];
   let totalZwg = 0;
 
-  for (const band of BANDS) {
+  for (const band of bands) {
     if (remaining <= 0) break;
     const bandStart = band.from - 1; // 0-indexed position where band begins
     const bandEnd = band.to ?? Infinity; // position where band ends

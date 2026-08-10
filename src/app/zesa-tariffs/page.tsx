@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { TARIFFS, BANDS, costForUnits, fmt, zwgToUsd } from "@/lib/tariff";
+import { UNIT_SLUGS } from "@/lib/amounts";
 import { BulbIcon, WrenchIcon } from "@/components/icons";
 import { FIRST_DATE, HISTORY } from "@/lib/history";
 import { breadcrumb, jsonLdProps, tariffDataset } from "@/lib/seo";
@@ -12,9 +13,17 @@ export const metadata: Metadata = {
 };
 
 export default function TariffsPage() {
-  const cumulative: { label: string; upTo: number; total: number }[] = [];
+  // Each row deep-links to the page that answers "how much is N units of
+  // ZESA" in full — the cumulative table is where that question gets asked.
+  const cumulative: { label: string; upTo: number; total: number; href: string | null }[] = [];
   for (const cap of [50, 100, 200, 300, 400]) {
-    cumulative.push({ label: `${cap} units`, upTo: cap, total: costForUnits(cap).totalZwg });
+    const slug = `${cap}-units`;
+    cumulative.push({
+      label: `${cap} units`,
+      upTo: cap,
+      total: costForUnits(cap).totalZwg,
+      href: UNIT_SLUGS.includes(slug) ? `/units/${slug}/` : null,
+    });
   }
   const fullQuota = costForUnits(400).totalZwg;
 
@@ -112,7 +121,15 @@ export default function TariffsPage() {
               <tbody>
                 {cumulative.map((c) => (
                   <tr key={c.label} className="border-b border-line last:border-0">
-                    <td className="px-2 py-3 font-medium sm:px-4">{c.label}</td>
+                    <td className="px-2 py-3 font-medium sm:px-4">
+                      {c.href ? (
+                        <Link href={c.href} className="underline decoration-line hover:text-volt-deep">
+                          {c.label}
+                        </Link>
+                      ) : (
+                        c.label
+                      )}
+                    </td>
                     <td className="whitespace-nowrap px-2 py-3 text-right font-mono sm:px-4">{fmt(c.total)}</td>
                     <td className="whitespace-nowrap px-2 py-3 text-right font-mono sm:px-4">${fmt(zwgToUsd(c.total))}</td>
                   </tr>
@@ -121,6 +138,13 @@ export default function TariffsPage() {
             </table>
           </div>
           </div>
+          <p className="mt-4 text-sm text-dim">
+            Each row above opens the full breakdown for that number of units — what it costs, what
+            it runs, and how the price has moved.{" "}
+            <Link href="/units/" className="font-medium underline hover:text-volt-deep">
+              Every amount and unit count in one table →
+            </Link>
+          </p>
           <div className="mt-5 rounded-lg border border-volt/60 bg-volt/10 p-4 text-sm leading-relaxed">
             <p className="font-semibold"><BulbIcon />Money-saving rule of thumb</p>
             <p className="mt-1">

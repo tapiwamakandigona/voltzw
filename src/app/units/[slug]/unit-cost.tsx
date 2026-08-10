@@ -1,6 +1,11 @@
 import Link from "next/link";
 import type { UnitPage } from "@/lib/amounts";
+import { AMOUNT_PAGES } from "@/lib/amounts";
 import { TARIFFS, MONTHLY_QUOTA, fmt, costForUnits } from "@/lib/tariff";
+import { APPLIANCES, daysOfQuotaUse, formatDuration, runtimeFor } from "@/lib/appliances";
+import { WhatItRuns } from "@/components/WhatItRuns";
+import { monthLabel, priceChangeForUnits } from "@/lib/history";
+import { UNIT_COPY } from "@/lib/copy";
 import { breadcrumb, jsonLdProps } from "@/lib/seo";
 
 /** Static "how much is N units of ZESA" page — the inverse of the
@@ -8,6 +13,15 @@ import { breadcrumb, jsonLdProps } from "@/lib/seo";
 export function UnitCostPage({ page, others }: { page: UnitPage; others: UnitPage[] }) {
   const { totalZwg, slices } = costForUnits(page.units);
   const quotaShare = (page.units / MONTHLY_QUOTA) * 100;
+  const avgPerKwh = totalZwg / page.units;
+  const marginal = slices[slices.length - 1]?.band;
+  const move = priceChangeForUnits(page.units);
+  const lastsDays = daysOfQuotaUse(page.units);
+  // The money page that lands closest to this many units, so the two
+  // directions of the same question link to each other.
+  const nearestAmount = [...AMOUNT_PAGES].sort(
+    (a, b) => Math.abs(a.units - page.units) - Math.abs(b.units - page.units),
+  )[0];
 
   const faq = [
     {
@@ -17,6 +31,10 @@ export function UnitCostPage({ page, others }: { page: UnitPage; others: UnitPag
     {
       q: "Can I pay for ZESA in US dollars?",
       a: `ZETDC bills in ZWG. The ≈ US$${fmt(page.costUsd)} figure uses the published reference rate of about ${fmt(TARIFFS.zwgPerUsdApprox, 1)} ZWG per US$; USD payment channels convert at the rate they offer on the day.`,
+    },
+    {
+      q: `How long does ${page.units} units of ZESA last?`,
+      a: `About ${formatDuration(lastsDays * 24)} for a household that would otherwise use its full ${MONTHLY_QUOTA} kWh quota in a month (≈ ${fmt(MONTHLY_QUOTA / 30, 1)} kWh a day). Run less than that and it stretches further: ${page.units} units is ${formatDuration(runtimeFor(page.units, APPLIANCES[0]).hours)} of a 3 kW geyser, or ${formatDuration(runtimeFor(page.units, APPLIANCES[APPLIANCES.length - 1]).hours)} of a fridge on its own.`,
     },
     {
       q: "Do these prices include the REA levy?",
@@ -57,6 +75,12 @@ export function UnitCostPage({ page, others }: { page: UnitPage; others: UnitPag
           </p>
         </div>
       </section>
+
+      {UNIT_COPY[page.units] ? (
+        <section className="container-page mt-8 max-w-3xl">
+          <p className="text-lg leading-relaxed">{UNIT_COPY[page.units]}</p>
+        </section>
+      ) : null}
 
       <section className="container-page mt-10">
         <h2 className="font-display text-2xl font-bold">Band-by-band breakdown</h2>
@@ -101,6 +125,68 @@ export function UnitCostPage({ page, others }: { page: UnitPage; others: UnitPag
         </p>
       </section>
 
+
+      <WhatItRuns units={page.units} label={`${page.units} units`} />
+
+      <section className="container-page mt-10 grid gap-4 sm:grid-cols-2">
+        <div className="rounded-2xl border border-line bg-card p-6 shadow-sm">
+          <h2 className="font-display text-xl font-bold">Average price you pay</h2>
+          <p className="mt-2 text-dim">
+            ZWG {fmt(totalZwg)} for {page.units} units works out at{" "}
+            <strong className="text-ink">ZWG {fmt(avgPerKwh, 4)} per kWh</strong> across the bands
+            you touch{marginal ? <> — your last unit is charged in the “{marginal.label}” band at ZWG {fmt(marginal.inclLevyZwg, 4)}</> : null}.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-line bg-card p-6 shadow-sm">
+          <h2 className="font-display text-xl font-bold">Versus the last schedule</h2>
+          {move ? (
+            <p className="mt-2 text-dim">
+              The same {page.units} units cost{" "}
+              <strong className="text-ink">ZWG {fmt(move.then)}</strong> under the schedule effective{" "}
+              {move.thenDate} ({monthLabel(move.thenDate.slice(0, 7))}) — a change of{" "}
+              <strong className="text-ink">
+                {move.pct >= 0 ? "+" : ""}
+                {fmt(move.pct, 1)}%
+              </strong>
+              .{" "}
+              <Link href="/zesa-tariffs/history/" className="underline hover:text-volt-deep">
+                See every schedule
+              </Link>
+              .
+            </p>
+          ) : (
+            <p className="mt-2 text-dim">
+              Only one schedule is on record so far, so there is nothing to compare against yet.{" "}
+              <Link href="/zesa-tariffs/history/" className="underline hover:text-volt-deep">
+                Tariff history
+              </Link>
+              .
+            </p>
+          )}
+        </div>
+      </section>
+
+      <section className="container-page mt-10">
+        <div className="rounded-2xl border border-line bg-card p-6 shadow-sm">
+          <h2 className="font-display text-xl font-bold">Starting from money instead?</h2>
+          <p className="mt-2 text-dim">
+            {nearestAmount.display} is the closest common purchase — it buys about{" "}
+            {fmt(nearestAmount.units, 1)} kWh.
+          </p>
+          <ul className="mt-4 flex flex-wrap gap-2">
+            {AMOUNT_PAGES.map((a) => (
+              <li key={a.slug}>
+                <Link
+                  href={`/units/${a.slug}/`}
+                  className="inline-flex min-h-11 items-center rounded-lg border border-line bg-paper px-3 text-sm hover:border-volt"
+                >
+                  {a.display} = {fmt(a.units, 1)} kWh
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
       <section className="container-page mt-10">
         <div className="rounded-2xl border border-line bg-card p-6 shadow-sm">
           <h2 className="font-display text-xl font-bold">Already bought units this month?</h2>
