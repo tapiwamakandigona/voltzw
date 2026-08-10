@@ -1,9 +1,16 @@
 #!/usr/bin/env node
 /**
- * ZESA tariff sync — scrapes zimpricecheck.com and updates src/data/tariffs.json
- * when published rates differ. Prints "changed" or "unchanged" and exits 0;
- * exits 1 on parse failure or implausible data (so CI fails loudly instead of
- * publishing garbage).
+ * ZESA tariff sync — scrapes zimpricecheck.com and updates src/data/tariffs.json.
+ *
+ * Every successful run writes `lastVerified` (that is the whole point of the
+ * "verified daily, not monthly" promise on the site: it must advance on days
+ * when ZESA does *not* move, otherwise the title, the meta description and the
+ * sitemap's lastmod silently go stale). Rates themselves are only rewritten
+ * when the published schedule differs.
+ *
+ * Prints `changed …` or `unchanged verified=<date>` and exits 0; exits 1 on
+ * parse failure or implausible data (so CI fails loudly instead of publishing
+ * garbage — and, importantly, does not claim a verification that never happened).
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -105,15 +112,19 @@ const changed =
     s.usdApprox !== current.bands[i].usdApprox
   );
 
-if (!changed) {
-  console.log("unchanged");
-  process.exit(0);
+// A successful scrape *is* a verification, whether or not the numbers moved.
+current.lastVerified = new Date().toISOString().slice(0, 10);
+
+if (changed) {
+  current.effectiveDate = effectiveDate;
+  current.zwgPerUsdApprox = +(scraped[0].inclLevyZwg / scraped[0].usdApprox).toFixed(1);
+  current.bands = current.bands.map((b, i) => ({ ...b, ...scraped[i] }));
 }
 
-current.effectiveDate = effectiveDate;
-current.lastVerified = new Date().toISOString().slice(0, 10);
-current.zwgPerUsdApprox = +(scraped[0].inclLevyZwg / scraped[0].usdApprox).toFixed(1);
-current.bands = current.bands.map((b, i) => ({ ...b, ...scraped[i] }));
-
 writeFileSync(FILE, JSON.stringify(current, null, 2) + "\n");
-console.log(`changed effective=${effectiveDate} bands=${scraped.map((s) => s.baseZwg).join(",")}`);
+
+console.log(
+  changed
+    ? `changed effective=${effectiveDate} verified=${current.lastVerified} bands=${scraped.map((s) => s.baseZwg).join(",")}`
+    : `unchanged verified=${current.lastVerified}`,
+);
