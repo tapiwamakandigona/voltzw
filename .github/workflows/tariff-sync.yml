@@ -35,21 +35,31 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # Runs every day, not only on a rate change: the daily verification is
+      # itself the freshness signal (lastVerified -> <title>, meta description,
+      # sitemap lastmod). Gating these steps on `changed` made "verified daily"
+      # go stale whenever ZESA held rates flat.
       - name: Append to the public rate history
-        if: steps.scrape.outputs.changed == 'true'
         run: node scripts/build-history.mjs
 
-      - name: Commit new tariffs
-        if: steps.scrape.outputs.changed == 'true'
+      - name: Commit
         run: |
           git config user.name "voltzw-tariff-bot"
           git config user.email "actions@github.com"
           git add src/data/tariffs.json src/data/tariff-history.json
-          git commit -m "ZESA tariff update ($(node -p "require('./src/data/tariffs.json').effectiveDate"))"
+          if git diff --cached --quiet; then
+            echo "nothing to commit (scrape produced no file change)"
+            exit 0
+          fi
+          if [[ "${{ steps.scrape.outputs.changed }}" == "true" ]]; then
+            MSG="ZESA tariff update ($(node -p "require('./src/data/tariffs.json').effectiveDate"))"
+          else
+            MSG="Tariffs verified unchanged ($(node -p "require('./src/data/tariffs.json').lastVerified"))"
+          fi
+          git commit -m "$MSG"
           git push
 
       - name: Deploy to Appwrite
-        if: steps.scrape.outputs.changed == 'true'
         env:
           APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
         run: |

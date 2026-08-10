@@ -8,6 +8,8 @@ import {
   monthKeys,
   monthLabel,
   monthRange,
+  monthsWithSchedules,
+  rateInForce,
   snapshotsForMonth,
   sparklinePoints,
   toCsv,
@@ -60,12 +62,60 @@ describe("derived series", () => {
 });
 
 describe("month grouping", () => {
-  it("lists months newest first and only months present in the data", () => {
+  // SPEC CHANGE (2026-08-10): monthKeys used to list only months that had a
+  // published schedule, which left holes (nothing was published between
+  // 2026-05-27 and 2026-06-30) and made /zesa-tariffs/2026-06/ a 404 while its
+  // neighbours were 200. It now spans first→latest with no gaps; the
+  // "only months with data" guarantee moved to monthsWithSchedules().
+  it("spans every month from the first record to the latest, newest first, no holes", () => {
     const keys = monthKeys();
+    expect(keys.length).toBeGreaterThan(0);
+    expect([...keys].sort().reverse()).toEqual(keys);
+    expect(keys[0]).toBe(LATEST.d.slice(0, 7));
+    expect(keys[keys.length - 1]).toBe(FIRST_DATE.slice(0, 7));
+    expect(new Set(keys).size).toBe(keys.length);
+    // consecutive: stepping back one month from each key yields the next one
+    for (let i = 0; i < keys.length - 1; i++) {
+      const [y, m] = keys[i].split("-").map(Number);
+      const prev = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
+      expect(keys[i + 1]).toBe(prev);
+    }
+    // every listed month resolves to a price: its own schedules, or the one
+    // still in force from an earlier month
+    for (const k of keys) {
+      expect(snapshotsForMonth(k).length > 0 || rateInForce(k) !== null).toBe(true);
+    }
+  });
+
+  it("monthsWithSchedules lists only months that published, newest first", () => {
+    const keys = monthsWithSchedules();
     expect(keys.length).toBeGreaterThan(0);
     expect([...keys].sort().reverse()).toEqual(keys);
     for (const k of keys) expect(snapshotsForMonth(k).length).toBeGreaterThan(0);
     expect(keys).toContain(LATEST.d.slice(0, 7));
+    expect(monthKeys()).toEqual(expect.arrayContaining(keys));
+  });
+
+  it("rateInForce returns the newest schedule predating the month, or null", () => {
+    expect(rateInForce(FIRST_DATE.slice(0, 7))).toBeNull();
+    expect(rateInForce("1999-01")).toBeNull();
+    const later = monthKeys()[0];
+    const held = rateInForce(later);
+    expect(held).not.toBeNull();
+    expect(held!.d < `${later}-01`).toBe(true);
+    // nothing between it and the month start
+    expect(HISTORY.filter((s) => s.d > held!.d && s.d < `${later}-01`)).toHaveLength(0);
+  });
+
+  it("gap months still render: every key has a range, and 2026-06 is one of them", () => {
+    for (const k of monthKeys()) expect(monthRange(k)).not.toBeNull();
+    const gaps = monthKeys().filter((k) => snapshotsForMonth(k).length === 0);
+    for (const k of gaps) {
+      const r = monthRange(k)!;
+      // a carried-over month is a flat rate, equal to the schedule in force
+      expect(r.min).toBe(r.max);
+      expect(r.min).toBe(rateInForce(k)!.incl[0]);
+    }
   });
 
   it("labels months in UTC so the build machine's timezone can't shift them", () => {

@@ -2,12 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { TARIFFS, BANDS, costForUnits, fmt, zwgToUsd } from "@/lib/tariff";
 import { BulbIcon, WrenchIcon } from "@/components/icons";
-import { FIRST_DATE, HISTORY } from "@/lib/history";
+import { FIRST_DATE, HISTORY, monthLabel } from "@/lib/history";
 import { breadcrumb, jsonLdProps, tariffDataset } from "@/lib/seo";
 
+/** The month this build is describing. People search "zesa tariffs august 2026",
+ *  so the month has to be in the title — a page titled only "Today" ranks for
+ *  the dated query and then gets no clicks, because the snippet doesn't match
+ *  what they typed. Rebuilt daily by the tariff sync, so it rolls over. */
+const CURRENT_MONTH = TARIFFS.lastVerified.slice(0, 7);
+const CURRENT_MONTH_LABEL = monthLabel(CURRENT_MONTH);
+
 export const metadata: Metadata = {
-  title: `ZESA Tariffs Today — ZWG ${fmt(BANDS[0].inclLevyZwg, 2)}/unit, All Six ZETDC Bands (${TARIFFS.effectiveDate})`,
-  description: `Current ZERA-approved ZESA (ZETDC) tariffs for Zimbabwe, effective ${TARIFFS.effectiveDate}: the first 50 units cost ZWG ${fmt(BANDS[0].inclLevyZwg, 4)} incl. the 6% REA levy. All six stepped bands in ZWG and USD, verified daily.`,
+  title: `ZESA Tariffs ${CURRENT_MONTH_LABEL} — Today's ZETDC Rates, ZWG ${fmt(BANDS[0].inclLevyZwg, 2)}/unit`,
+  description: `Current ZERA-approved ZESA (ZETDC) tariffs for Zimbabwe in ${CURRENT_MONTH_LABEL}, effective ${TARIFFS.effectiveDate} and checked again on ${TARIFFS.lastVerified}: the first 50 units cost ZWG ${fmt(BANDS[0].inclLevyZwg, 4)} incl. the 6% REA levy. All six stepped bands in ZWG and USD, verified daily.`,
   alternates: { canonical: "/zesa-tariffs/" },
 };
 
@@ -33,9 +40,14 @@ export default function TariffsPage() {
           </p>
           <h1 className="font-display mt-3 text-4xl font-bold">Current ZESA tariffs<span aria-hidden className="text-volt">.</span></h1>
           <p className="mt-3 max-w-2xl text-white/70">
-            ZERA-approved ZETDC prepaid tariffs — every band, with and without the 6% Rural Electrification (REA) levy.
+            ZERA-approved ZETDC prepaid tariffs for {CURRENT_MONTH_LABEL} — every band, with and
+            without the 6% Rural Electrification (REA) levy. Re-checked against the published
+            schedule every day, not once a month.
           </p>
-          <p className="mt-4 text-sm">
+          <p className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+            <Link href={`/zesa-tariffs/${CURRENT_MONTH}/`} className="underline hover:text-volt">
+              Every {CURRENT_MONTH_LABEL} schedule →
+            </Link>
             <Link href="/zesa-tariffs/history/" className="underline hover:text-volt">
               See how these rates have moved since {FIRST_DATE} →
             </Link>
