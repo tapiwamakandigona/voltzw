@@ -33,7 +33,7 @@ function SliceTable({ slices, currency }: { slices: BandSlice[]; currency: Curre
   if (slices.length === 0) return null;
   return (
     <div className="scroll-hint mt-4 rounded-lg border border-line bg-card">
-      <div className="overflow-x-auto rounded-lg">
+      <div tabIndex={0} role="region" aria-label="Band-by-band breakdown (scrolls sideways)" className="overflow-x-auto rounded-lg">
         <table className="w-full text-xs sm:text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-dim">
