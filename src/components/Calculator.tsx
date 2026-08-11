@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { WhatsAppIcon } from "@/components/icons";
 import {
   costForUnits, unitsForAmount, remainingQuota, zwgToUsd, usdToZwg, fmt,
   MONTHLY_QUOTA, RATE, type BandSlice,
@@ -11,6 +12,11 @@ type Mode = "money" | "units";
 type Currency = "ZWG" | "USD";
 
 const MAX = 1_000_000_000; // matches MAX_INPUT in lib/tariff
+
+// The amounts people actually buy (mirrors the "common amounts" section and the GSC queries).
+const QUICK_ZWG = [100, 200, 500, 1000, 2000];
+const QUICK_USD = [1, 2, 5, 10, 20];
+const QUICK_UNITS = [50, 100, 200, 300, 400];
 
 /** Validate the primary calculator input. Returns the parsed value or a
  *  human error — never lets NaN/Infinity/negatives reach the band math. */
@@ -97,6 +103,16 @@ export default function Calculator() {
     return { error: null, headline, sub, slices: r.slices };
   }, [mode, currency, amount, units, alreadyN]);
 
+  const [copied, setCopied] = useState(false);
+
+  // What actually gets forwarded around family WhatsApp groups: the number,
+  // the price, the date it was true, and where to check it.
+  const shareText = useMemo(() => {
+    if (result.error) return "";
+    const context = alreadyN > 0 ? ` (after ${fmt(alreadyN, 0)} units already bought this month)` : " (first purchase of the month)";
+    return `ZESA today: ${result.headline} ${result.sub}${context}. Checked on zesa.tapiwa.me`;
+  }, [result, alreadyN]);
+
   const quota = useMemo(() => remainingQuota(alreadyN), [alreadyN]);
   const quotaUsed = Math.min(alreadyN, MONTHLY_QUOTA);
   const quotaPct = Math.round((quotaUsed / MONTHLY_QUOTA) * 100);
@@ -134,7 +150,7 @@ export default function Calculator() {
               onClick={() => switchCurrency(c)}
               className={`min-h-11 rounded-md px-3 py-2 transition ${currency === c ? "bg-volt text-ink" : "text-dim hover:text-ink"}`}
             >
-              {c === "USD" ? "US$" : "ZWG"}
+              {c === "USD" ? "US$" : "ZiG (ZWG)"}
             </button>
           ))}
         </div>
@@ -144,7 +160,7 @@ export default function Calculator() {
         {mode === "money" ? (
           <label className="block">
             <span className="mb-1 block text-sm font-medium text-dim">
-              Amount to spend ({currency === "USD" ? "US$" : "ZWG"})
+              Amount to spend ({currency === "USD" ? "US$" : "ZiG"})
             </span>
             <input type="number" inputMode="decimal" min="0" max={MAX} value={amount} onChange={(e) => setAmount(e.target.value)} aria-invalid={!!result.error} aria-describedby={result.error ? "calc-error" : undefined} className={inputCls} />
           </label>
@@ -158,6 +174,27 @@ export default function Calculator() {
           <span className="mb-1 block text-sm font-medium text-dim">Units already bought this month</span>
           <input type="number" inputMode="decimal" min="0" value={already} onChange={(e) => setAlready(e.target.value)} className={inputCls} />
         </label>
+      </div>
+
+      {/* One-tap presets — 93% of visitors are on phones, where typing is the slow part. */}
+      <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Quick amounts">
+        {(mode === "money" ? (currency === "USD" ? QUICK_USD : QUICK_ZWG) : QUICK_UNITS).map((v) => {
+          const current = mode === "money" ? amount : units;
+          const active = parseFloat(current) === v;
+          return (
+            <button
+              key={`${mode}-${currency}-${v}`}
+              type="button"
+              onClick={() => (mode === "money" ? setAmount(String(v)) : setUnits(String(v)))}
+              aria-pressed={active}
+              className={`min-h-9 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                active ? "border-volt-deep bg-volt text-ink" : "border-line bg-paper text-dim hover:border-volt-deep hover:text-ink"
+              }`}
+            >
+              {mode === "money" ? (currency === "USD" ? `US$${v}` : `ZiG ${v}`) : `${v} units`}
+            </button>
+          );
+        })}
       </div>
 
       {result.error ? (
@@ -175,6 +212,23 @@ export default function Calculator() {
           <p className="text-xs uppercase tracking-wider text-white/60">{mode === "money" ? "You get" : "You pay"}</p>
           <p className="font-display mt-1 text-3xl font-bold text-volt sm:text-4xl">{result.headline}</p>
           <p className="mt-1 text-sm text-white/70">{result.sub}</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-9 items-center gap-2 rounded-full bg-[#25D366] px-4 py-1.5 text-xs font-bold text-ink transition hover:brightness-110"
+            >
+              <WhatsAppIcon />Share on WhatsApp
+            </a>
+            <button
+              type="button"
+              onClick={() => { navigator.clipboard?.writeText(shareText); setCopied(true); setTimeout(() => setCopied(false), 1600); }}
+              className="min-h-9 rounded-full border border-white/25 px-4 py-1.5 text-xs font-semibold text-white/80 transition hover:border-white/60 hover:text-white"
+            >
+              {copied ? "Copied ✓" : "Copy result"}
+            </button>
+          </div>
         </div>
       )}
 
@@ -191,7 +245,7 @@ export default function Calculator() {
       </div>
 
       <p className="mt-4 text-xs text-dim">
-        Prices include the 6% REA levy. Based on ZERA-approved ZETDC tariffs (billed in ZWG). USD figures use
+        Prices include the 6% REA levy. Based on ZERA-approved ZETDC tariffs (billed in ZiG / ZWG). USD figures use
         ≈{fmt(RATE, 1)} ZWG/US$ and are estimates — your bank or wallet rate may differ slightly.
       </p>
     </div>

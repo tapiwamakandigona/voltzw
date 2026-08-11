@@ -14,8 +14,8 @@ const CURRENT_MONTH = TARIFFS.lastVerified.slice(0, 7);
 const CURRENT_MONTH_LABEL = monthLabel(CURRENT_MONTH);
 
 export const metadata: Metadata = {
-  title: `ZESA Tariffs ${CURRENT_MONTH_LABEL} — Today's ZETDC Rates, ZWG ${fmt(BANDS[0].inclLevyZwg, 2)}/unit`,
-  description: `Current ZERA-approved ZESA (ZETDC) tariffs for Zimbabwe in ${CURRENT_MONTH_LABEL}, effective ${TARIFFS.effectiveDate} and checked again on ${TARIFFS.lastVerified}: the first 50 units cost ZWG ${fmt(BANDS[0].inclLevyZwg, 4)} incl. the 6% REA levy. All six stepped bands in ZWG and USD, verified daily.`,
+  title: `ZESA Tariffs ${CURRENT_MONTH_LABEL} in ZiG & USD — Full ZETDC Table, ZWG ${fmt(BANDS[0].inclLevyZwg, 2)}/unit`,
+  description: `Current ZERA-approved ZESA (ZETDC) tariffs for Zimbabwe in ${CURRENT_MONTH_LABEL}, in ZiG (ZWG) and USD: the first 50 units cost ZWG ${fmt(BANDS[0].inclLevyZwg, 4)} incl. the 6% REA levy. Full table of all six stepped bands, verified daily — free PDF download.`,
   alternates: { canonical: "/zesa-tariffs/" },
 };
 
@@ -49,9 +49,9 @@ export default function TariffsPage() {
           </p>
           <h1 className="font-display mt-3 text-4xl font-bold">Current ZESA tariffs<span aria-hidden className="text-volt">.</span></h1>
           <p className="mt-3 max-w-2xl text-white/70">
-            ZERA-approved ZETDC prepaid tariffs for {CURRENT_MONTH_LABEL} — every band, with and
-            without the 6% Rural Electrification (REA) levy. Re-checked against the published
-            schedule every day, not once a month.
+            ZERA-approved ZETDC prepaid tariffs for {CURRENT_MONTH_LABEL}, in ZiG (ZWG) and US dollars —
+            every band, with and without the 6% Rural Electrification (REA) levy. Re-checked against
+            the published schedule every day, not once a month.
           </p>
           <p className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
             <Link href={`/zesa-tariffs/${CURRENT_MONTH}/`} className="underline hover:text-volt">
@@ -60,6 +60,9 @@ export default function TariffsPage() {
             <Link href="/zesa-tariffs/history/" className="underline hover:text-volt">
               See how these rates have moved since {FIRST_DATE} →
             </Link>
+            <a href="/zesa-tariffs.pdf" className="underline hover:text-volt">
+              Download the {CURRENT_MONTH_LABEL} tariff table (PDF) →
+            </a>
           </p>
         </div>
       </section>

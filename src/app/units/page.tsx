@@ -6,8 +6,8 @@ import { daysOfQuotaUse, formatDuration } from "@/lib/appliances";
 import { breadcrumb, jsonLdProps } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: `ZESA Units per Amount — What Your Money Buys in Zimbabwe (${TARIFFS.effectiveDate})`,
-  description: `How many ZESA units (kWh) you get for ZWG 50 to ZWG 5,000 and US$1 to US$100, what 50 to 400 units cost, and the effective price per kWh for each — at the ZERA-approved ZETDC tariffs effective ${TARIFFS.effectiveDate}, incl. the 6% REA levy. Updated daily.`,
+  title: `ZESA Units per Amount — What Your ZiG (ZWG) or USD Buys (${TARIFFS.effectiveDate})`,
+  description: `How many ZESA units (kWh) you get for ZiG (ZWG) 50 to 5,000 and US$1 to US$100, what 50 to 400 units cost, and the effective price per kWh for each — at the ZERA-approved ZETDC tariffs effective ${TARIFFS.effectiveDate}, incl. the 6% REA levy. Updated daily.`,
   alternates: { canonical: "/units/" },
 };
 

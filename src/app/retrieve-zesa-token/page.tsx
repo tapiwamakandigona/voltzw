@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "How to Retrieve a Lost ZESA Token — Every Method That Works",
+  title: "ZESA Token Not Received? Retrieve or View It — EcoCash, ZB, CBZ & All Banks",
   description:
-    "ZESA token not showing? Step-by-step guide to retrieve a lost prepaid electricity token: EcoCash, bank apps, the ZETDC self-service portal, WhatsApp and in-person options.",
+    "Your token is not lost — it is stored where you bought it. Retrieve or view a ZESA token in minutes: EcoCash (*151#), ZB, CBZ, Steward and other bank apps, the ZETDC self-service portal, WhatsApp and in-person options.",
   alternates: { canonical: "/retrieve-zesa-token/" },
 };
 
@@ -16,7 +16,7 @@ const howToJsonLd = {
   step: [
     { "@type": "HowToStep", name: "Identify where you bought", text: "Token retrieval always goes through the channel you purchased from: EcoCash, your bank, an online vendor, or ZETDC directly." },
     { "@type": "HowToStep", name: "EcoCash", text: "Dial *151# , go to Make Payment → Pay Bill history, or check your EcoCash SMS statement. You can also call Econet on 114 to have the token resent." },
-    { "@type": "HowToStep", name: "Bank purchases", text: "Reopen the bank app's ZESA/bill payments section and view transaction details — the token is usually stored there. Otherwise contact the bank's support line with your reference number." },
+    { "@type": "HowToStep", name: "Bank purchases (ZB, CBZ, Steward, FBC, NMB and others)", text: "Reopen the bank app's ZESA/bill payments section and view the transaction details — the token is usually stored there. Otherwise contact the bank's support line with your reference number." },
     { "@type": "HowToStep", name: "ZETDC self-service portal", text: "Register at selfservice.zetdc.co.zw with your meter number and a past token, then view your token history." },
     { "@type": "HowToStep", name: "In person", text: "Visit a ZETDC banking hall or service centre with your meter number and proof of payment." },
   ],
@@ -36,7 +36,7 @@ const methods = [
     title: "Bought through a bank app or USSD?",
     id: "bank",
     steps: [
-      <>Open the app&apos;s <strong>bill payments / ZESA</strong> section and tap the transaction — most banks (CBZ, Steward, FBC, NMB, etc.) store the token in the transaction details.</>,
+      <>Open the app&apos;s <strong>bill payments / ZESA</strong> section and tap the transaction — most banks (ZB, CBZ, Steward, FBC, NMB, etc.) store the token in the transaction details.</>,
       <>If the app shows no token, contact the bank&apos;s support with your <strong>transaction reference number</strong> — they can re-issue it. The purchase went through their vending partner, so ZETDC will redirect you back to the bank anyway.</>,
     ],
   },
