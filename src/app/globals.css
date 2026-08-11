@@ -107,3 +107,52 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 @media (prefers-reduced-motion: reduce) {
   .animate-rise { animation: none; }
 }
+
+/* ---- 3D tariff staircase (home hero) ------------------------------------
+   True CSS 3D, no WebGL: cheap enough for the low-end Androids that are 93%
+   of this site's traffic. The slow idle turn stops under reduced motion;
+   pointer tilt is gated in JS by the same media query. */
+.stairs-wrap {
+  --rx: 62deg;
+  --rz: -45deg;
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  touch-action: pan-y; /* tilting must not trap page scroll on phones */
+}
+.stairs-scene {
+  position: relative;
+  height: 300px;
+  transform-style: preserve-3d;
+  transform: translateY(40px) scale(0.9) rotateX(var(--rx)) rotateZ(var(--rz));
+  transition: transform 0.25s ease-out;
+  animation: stairs-turn 14s ease-in-out infinite;
+  margin: 0 auto;
+  width: 316px; /* 6 bars × (46+8) − gap */
+}
+/* When the visitor drives the tilt, the idle animation yields. */
+.stairs-wrap:hover .stairs-scene,
+.stairs-wrap:active .stairs-scene { animation-play-state: paused; }
+.stairs-bar {
+  position: absolute;
+  bottom: 90px;
+  left: 0;
+  transform-style: preserve-3d;
+}
+.stairs-face { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.stairs-top { transform: translateZ(var(--h)); border-radius: 2px; }
+.stairs-south { height: var(--h); transform: translateY(46px) rotateX(90deg); }
+.stairs-east { height: var(--h); transform: translateX(46px) rotateZ(90deg) rotateX(90deg); }
+.stairs-caption {
+  margin-top: 0.75rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+@keyframes stairs-turn {
+  0%, 100% { transform: translateY(40px) scale(0.9) rotateX(62deg) rotateZ(-49deg); }
+  50%      { transform: translateY(40px) scale(0.9) rotateX(58deg) rotateZ(-41deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stairs-scene { animation: none; }
+}

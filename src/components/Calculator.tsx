@@ -93,17 +93,17 @@ export default function Calculator() {
       const r = unitsForAmount(amtZwg, alreadyN);
       const sub =
         currency === "USD"
-          ? `for US$${fmt(raw)} (≈ ZWG ${fmt(amtZwg)})`
-          : `for ZWG ${fmt(raw)} (≈ US$${fmt(zwgToUsd(raw))})`;
+          ? `for US$${fmt(raw)} (≈ ZiG ${fmt(amtZwg)})`
+          : `for ZiG ${fmt(raw)} (≈ US$${fmt(zwgToUsd(raw))})`;
       return { error: null, headline: `${fmt(r.totalUnits, 1)} kWh`, sub, slices: r.slices };
     }
     const { value: u, error } = parseInput(units, "the units you need");
     if (error) return { error, slices: [] as BandSlice[] };
     const r = costForUnits(u, alreadyN);
-    const headline = currency === "USD" ? `US$${fmt(zwgToUsd(r.totalZwg))}` : `ZWG ${fmt(r.totalZwg)}`;
+    const headline = currency === "USD" ? `US$${fmt(zwgToUsd(r.totalZwg))}` : `ZiG ${fmt(r.totalZwg)}`;
     const sub =
       currency === "USD"
-        ? `≈ ZWG ${fmt(r.totalZwg)} for ${fmt(u, 1)} kWh`
+        ? `≈ ZiG ${fmt(r.totalZwg)} for ${fmt(u, 1)} kWh`
         : `≈ US$${fmt(zwgToUsd(r.totalZwg))} for ${fmt(u, 1)} kWh`;
     return { error: null, headline, sub, slices: r.slices };
   }, [mode, currency, amount, units, alreadyN]);
@@ -153,7 +153,7 @@ export default function Calculator() {
               type="button"
               aria-pressed={currency === c}
               onClick={() => switchCurrency(c)}
-              className={`min-h-11 rounded-md px-3 py-2 transition ${currency === c ? "bg-volt text-ink" : "text-dim hover:text-ink"}`}
+              className={`min-h-11 whitespace-nowrap rounded-md px-3 py-2 transition ${currency === c ? "bg-volt text-ink" : "text-dim hover:text-ink"}`}
             >
               {c === "USD" ? "US$" : "ZiG (ZWG)"}
             </button>
@@ -261,7 +261,7 @@ export default function Calculator() {
         <p className="mt-2">
           You have used <strong>{fmt(quotaUsed, 0)} of {MONTHLY_QUOTA} kWh</strong> ({quotaPct}%) of this month&apos;s
           discounted quota. Buying your remaining <strong>{fmt(quota.units, 0)} discounted units</strong> before the
-          quota resets on the 1st costs <strong>ZWG {fmt(quota.costZwg)}</strong> (≈ US${fmt(zwgToUsd(quota.costZwg))}).
+          quota resets on the 1st costs <strong>ZiG {fmt(quota.costZwg)}</strong> (≈ US${fmt(zwgToUsd(quota.costZwg))}).
           Anything above 400 kWh in the same month is charged at the top rate.
         </p>
       </div>

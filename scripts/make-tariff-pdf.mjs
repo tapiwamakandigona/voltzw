@@ -10,8 +10,16 @@ const month = new Date(t.lastVerified + "T00:00:00Z").toLocaleString("en-GB", { 
 const fmt = (n, d = 2) => n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
 
 const INK = "#18181b", DIM = "#52525b", VOLT = "#b45309", LINE = "#e4e4e7";
+const BAND_COLORS = ["#1a9850", "#91cf60", "#d9ef8b", "#fee08b", "#fc8d59", "#d73027"];
 const doc = new PDFDocument({ size: "A4", margins: { top: 54, bottom: 54, left: 54, right: 54 } });
 doc.pipe(fs.createWriteStream(new URL("../public/zesa-tariffs.pdf", import.meta.url)));
+
+// Brand header: volt-yellow band + wordmark, same identity as the site.
+doc.rect(0, 0, doc.page.width, 30).fill("#f5b800");
+doc.font("Helvetica-Bold").fontSize(12).fillColor("#16181d").text("VoltZW", 54, 9, { lineBreak: false });
+doc.font("Helvetica").fontSize(9).fillColor("#16181d")
+   .text("zesa.tapiwa.me", 54, 11, { width: doc.page.width - 108, align: "right" });
+doc.x = 54; doc.y = 54;
 
 doc.font("Helvetica-Bold").fontSize(20).fillColor(INK)
    .text(`ZESA Tariffs — ${month}`, { continued: false });
@@ -21,15 +29,16 @@ doc.font("Helvetica").fontSize(10.5).fillColor(DIM)
    .text(`Includes the ${t.reaLevyPct}% Rural Electrification (REA) levy. Monthly discounted quota: ${t.monthlyQuotaKwh} kWh.`);
 doc.moveDown(1.2);
 
-function table(headers, rows, widths, aligns) {
+function table(headers, rows, widths, aligns, swatches) {
   const x0 = doc.x, startY = doc.y;
   doc.font("Helvetica-Bold").fontSize(9).fillColor(DIM);
   let x = x0;
   headers.forEach((h, i) => { doc.text(h.toUpperCase(), x, startY, { width: widths[i], align: aligns[i] }); x += widths[i]; });
   let y = startY + 16;
   doc.moveTo(x0, y - 4).lineTo(x0 + widths.reduce((a, b) => a + b), y - 4).strokeColor(LINE).lineWidth(1).stroke();
-  rows.forEach((row) => {
+  rows.forEach((row, r) => {
     x = x0;
+    if (swatches) doc.rect(x0 - 12, y + 1, 7, 7).fill(swatches[r] ?? swatches[swatches.length - 1]);
     row.forEach((cell, i) => {
       doc.font(i === 0 ? "Helvetica-Bold" : "Helvetica").fontSize(10).fillColor(i === 0 ? INK : DIM)
          .text(cell, x, y, { width: widths[i], align: aligns[i] });
@@ -46,7 +55,7 @@ doc.moveDown(0.5);
 table(
   ["Consumption band", "Base ZWG/unit", `Incl. ${t.reaLevyPct}% REA`, "~ USD/unit"],
   t.bands.map((b) => [b.label, fmt(b.baseZwg, 4), fmt(b.inclLevyZwg, 4), `$${fmt(b.usdApprox, 2)}`]),
-  [170, 110, 110, 97], ["left", "right", "right", "right"],
+  [170, 110, 110, 97], ["left", "right", "right", "right"], BAND_COLORS,
 );
 
 doc.moveDown(1);
