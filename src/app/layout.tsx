@@ -27,11 +27,15 @@ export const metadata: Metadata = {
     siteName: "VoltZW",
     title: "VoltZW — ZESA electricity, made simple",
     description: "Calculator with live tariffs, token retrieval help, and the stepped-tariff tricks that save you money.",
+    // The og image is the file-convention src/app/opengraph-image.png,
+    // regenerated every build from tariffs.json by scripts/make-og.mjs so the
+    // WhatsApp/Facebook preview always shows the current month + rates.
   },
   twitter: {
     card: "summary_large_image",
     title: "VoltZW — ZESA electricity, made simple",
     description: "Calculator with live tariffs, token retrieval help, and the stepped-tariff tricks that save you money.",
+    images: ["/opengraph-image.png"],
   },
   robots: { index: true, follow: true },
   alternates: { canonical: "/" },

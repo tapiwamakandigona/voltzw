@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "prebuild": "node scripts/make-tariff-pdf.mjs"
+    "prebuild": "node scripts/make-tariff-pdf.mjs && node scripts/make-og.mjs"
   },
   "dependencies": {
     "next": "16.2.10",
@@ -23,6 +23,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "pdfkit": "^0.19.1",
+    "sharp": "^0.35.3",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.9"
