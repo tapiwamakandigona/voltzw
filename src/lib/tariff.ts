@@ -107,3 +107,8 @@ export const RATE = tariffs.zwgPerUsdApprox;
 export function usdToZwg(usd: number): number {
   return usd * tariffs.zwgPerUsdApprox;
 }
+
+/** CSS variable for a band's heat color, by index in BANDS (cheap → expensive). */
+export function bandColor(index: number): string {
+  return `var(--band-${Math.min(index + 1, 6)})`;
+}
