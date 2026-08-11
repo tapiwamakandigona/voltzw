@@ -108,51 +108,56 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   .animate-rise { animation: none; }
 }
 
-/* ---- 3D tariff staircase (home hero) ------------------------------------
-   True CSS 3D, no WebGL: cheap enough for the low-end Androids that are 93%
-   of this site's traffic. The slow idle turn stops under reduced motion;
-   pointer tilt is gated in JS by the same media query. */
+/* ---- 3D tariff staircase (result card) ----------------------------------
+   Lives inside the calculator result: the bands a purchase reaches light up,
+   unreached bands stay ghosted. True CSS 3D, cheap enough for the low-end
+   Androids that are 93% of traffic. Pointer tilt is gated in JS by
+   prefers-reduced-motion; there is no idle animation — this is an instrument
+   readout, not a decoration. */
 .stairs-wrap {
   --rx: 62deg;
   --rz: -45deg;
   position: relative;
-  width: 100%;
-  max-width: 420px;
+  margin-top: 0.75rem;
   touch-action: pan-y; /* tilting must not trap page scroll on phones */
+  overflow: hidden;
+  flex-shrink: 0;
+}
+@media (min-width: 640px) {
+  .stairs-wrap { margin-top: 0; }
 }
 .stairs-scene {
   position: relative;
-  height: 300px;
-  transform-style: preserve-3d;
-  transform: translateY(40px) scale(0.9) rotateX(var(--rx)) rotateZ(var(--rz));
-  transition: transform 0.25s ease-out;
-  animation: stairs-turn 14s ease-in-out infinite;
+  height: 168px;
+  width: 275px; /* 6 bars × (40+7) − gap */
   margin: 0 auto;
-  width: 316px; /* 6 bars × (46+8) − gap */
+  transform-style: preserve-3d;
+  transform: translateY(14px) scale(0.94) rotateX(var(--rx)) rotateZ(var(--rz));
+  transition: transform 0.25s ease-out;
 }
-/* When the visitor drives the tilt, the idle animation yields. */
-.stairs-wrap:hover .stairs-scene,
-.stairs-wrap:active .stairs-scene { animation-play-state: paused; }
 .stairs-bar {
   position: absolute;
-  bottom: 90px;
+  bottom: 44px;
   left: 0;
   transform-style: preserve-3d;
 }
-.stairs-face { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.stairs-face {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  /* Ghost state: unreached bands are wireframe-ish shells on the dark card. */
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.13);
+  transition: background 0.35s ease;
+}
+.stairs-on .stairs-face { box-shadow: none; }
 .stairs-top { transform: translateZ(var(--h)); border-radius: 2px; }
-.stairs-south { height: var(--h); transform: translateY(46px) rotateX(90deg); }
-.stairs-east { height: var(--h); transform: translateX(46px) rotateZ(90deg) rotateX(90deg); }
+.stairs-south { height: var(--h); transform: translateY(40px) rotateX(90deg); }
+.stairs-east { height: var(--h); transform: translateX(40px) rotateZ(90deg) rotateX(90deg); }
 .stairs-caption {
-  margin-top: 0.75rem;
+  margin-top: 0.25rem;
   text-align: center;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: rgba(255, 255, 255, 0.55);
-}
-@keyframes stairs-turn {
-  0%, 100% { transform: translateY(40px) scale(0.9) rotateX(62deg) rotateZ(-49deg); }
-  50%      { transform: translateY(40px) scale(0.9) rotateX(58deg) rotateZ(-41deg); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .stairs-scene { animation: none; }
 }

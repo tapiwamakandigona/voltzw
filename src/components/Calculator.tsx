@@ -39,8 +39,8 @@ function SliceTable({ slices, currency }: { slices: BandSlice[]; currency: Curre
             <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-dim">
               <th className="px-2 py-2 font-medium sm:px-3">Band</th>
               <th className="px-2 py-2 text-right font-medium sm:px-3">Units</th>
-              <th className="px-2 py-2 text-right font-medium sm:px-3">{currency === "ZWG" ? "ZWG/unit" : "US$/unit"}</th>
               <th className="px-2 py-2 text-right font-medium sm:px-3">Cost</th>
+              <th className="hidden px-2 py-2 text-right font-medium sm:table-cell sm:px-3">{currency === "ZWG" ? "ZWG/unit" : "US$/unit"}</th>
             </tr>
           </thead>
           <tbody>
@@ -54,10 +54,10 @@ function SliceTable({ slices, currency }: { slices: BandSlice[]; currency: Curre
                 </td>
                 <td className="px-2 py-2 text-right font-mono sm:px-3">{fmt(s.units, 1)}</td>
                 <td className="px-2 py-2 text-right font-mono whitespace-nowrap sm:px-3">
-                  {currency === "ZWG" ? fmt(s.band.inclLevyZwg, 4) : fmt(zwgToUsd(s.band.inclLevyZwg), 4)}
+                  {currency === "ZWG" ? `ZiG ${fmt(s.costZwg)}` : `US$${fmt(zwgToUsd(s.costZwg))}`}
                 </td>
-                <td className="px-2 py-2 text-right font-mono whitespace-nowrap sm:px-3">
-                  {currency === "ZWG" ? `ZWG ${fmt(s.costZwg)}` : `US$${fmt(zwgToUsd(s.costZwg))}`}
+                <td className="hidden px-2 py-2 text-right font-mono whitespace-nowrap sm:table-cell sm:px-3">
+                  {currency === "ZWG" ? fmt(s.band.inclLevyZwg, 4) : fmt(zwgToUsd(s.band.inclLevyZwg), 4)}
                 </td>
               </tr>
             ))}
@@ -214,23 +214,18 @@ export default function Calculator() {
         </div>
       ) : (
         <div className="mt-6 rounded-xl bg-ink p-5 text-white">
-          <p className="text-xs uppercase tracking-wider text-white/60">{mode === "money" ? "You get" : "You pay"}</p>
-          <p className="font-display mt-1 text-3xl font-bold text-volt sm:text-4xl">{result.headline}</p>
-          <p className="mt-1 text-sm text-white/70">{result.sub}</p>
-          {result.slices.length > 1 && (
-            <div aria-hidden className="mt-3 flex h-2 overflow-hidden rounded-full">
-              {result.slices.map((sl, i) => (
-                <span
-                  key={i}
-                  className="h-2"
-                  style={{
-                    width: `${Math.max(3, (sl.costZwg / result.slices.reduce((a, x) => a + x.costZwg, 0)) * 100)}%`,
-                    background: bandColor(BANDS.findIndex((b) => b.label === sl.band.label)),
-                  }}
-                />
-              ))}
+          {/* Wide screens: number left, staircase right — the dark card reads
+              as one instrument instead of a headline over empty space. */}
+          <div className="sm:flex sm:items-center sm:justify-between sm:gap-8">
+            <div className="min-w-0">
+              <p className="text-xs uppercase tracking-wider text-white/60">{mode === "money" ? "You get" : "You pay"}</p>
+              <p className="font-display mt-1 text-3xl font-bold text-volt sm:text-4xl">{result.headline}</p>
+              <p className="mt-1 text-sm text-white/70">{result.sub}</p>
             </div>
-          )}
+            {/* Your money on the price staircase: reached bands light up,
+                the rest stay ghosted. 3D heights = the real per-unit rates. */}
+            <TariffStaircase slices={result.slices} />
+          </div>
           <div className="mt-4 flex flex-wrap gap-2">
             <a
               href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
@@ -272,4 +267,5 @@ export default function Calculator() {
       </p>
     </div>
   );
-}
+}import TariffStaircase from "@/components/TariffStaircase";
+
