@@ -55,7 +55,7 @@ export default function UnitsIndex() {
               <tr className="border-b border-line bg-paper text-left text-xs uppercase tracking-wider text-dim">
                 <th className="px-2 py-3 font-medium sm:px-4">You pay</th>
                 <th className="px-2 py-3 text-right font-medium sm:px-4">You get</th>
-                <th className="whitespace-nowrap px-2 py-3 text-right font-medium sm:px-4">ZWG / kWh</th>
+                <th className="hidden whitespace-nowrap px-2 py-3 text-right font-medium sm:table-cell sm:px-4">ZWG / kWh</th>
                 <th className="whitespace-nowrap px-2 py-3 text-right font-medium sm:px-4">Lasts</th>
               </tr>
             </thead>
@@ -68,7 +68,7 @@ export default function UnitsIndex() {
                     </Link>
                   </td>
                   <td className="px-2 py-3 text-right tabular-nums sm:px-4">{fmt(p.units, 1)} kWh</td>
-                  <td className="px-2 py-3 text-right tabular-nums text-dim sm:px-4">
+                  <td className="hidden px-2 py-3 text-right tabular-nums text-dim sm:table-cell sm:px-4">
                     {p.units > 0 ? fmt(p.amountZwg / p.units, 3) : "—"}
                   </td>
                   <td className="whitespace-nowrap px-2 py-3 text-right tabular-nums text-dim sm:px-4">
@@ -136,7 +136,7 @@ export default function UnitsIndex() {
                   <th className="px-2 py-3 font-medium sm:px-4">Units</th>
                   <th className="px-2 py-3 text-right font-medium sm:px-4">Cost (ZWG)</th>
                   <th className="whitespace-nowrap px-2 py-3 text-right font-medium sm:px-4">≈ USD</th>
-                  <th className="whitespace-nowrap px-2 py-3 text-right font-medium sm:px-4">ZWG / kWh</th>
+                  <th className="hidden whitespace-nowrap px-2 py-3 text-right font-medium sm:table-cell sm:px-4">ZWG / kWh</th>
                   <th className="whitespace-nowrap px-2 py-3 text-right font-medium sm:px-4">% of quota</th>
                 </tr>
               </thead>
@@ -150,7 +150,7 @@ export default function UnitsIndex() {
                     </td>
                     <td className="px-2 py-3 text-right tabular-nums sm:px-4">{fmt(u.costZwg)}</td>
                     <td className="px-2 py-3 text-right tabular-nums text-dim sm:px-4">${fmt(u.costUsd)}</td>
-                    <td className="px-2 py-3 text-right tabular-nums text-dim sm:px-4">
+                    <td className="hidden px-2 py-3 text-right tabular-nums text-dim sm:table-cell sm:px-4">
                       {fmt(u.costZwg / u.units, 3)}
                     </td>
                     <td className="px-2 py-3 text-right tabular-nums text-dim sm:px-4">
