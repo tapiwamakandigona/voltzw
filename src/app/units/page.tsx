@@ -49,7 +49,7 @@ export default function UnitsIndex() {
       <h2 className="font-display text-xl font-bold">{heading}</h2>
       <p className="mt-2 text-sm text-dim">{note}</p>
       <div className="scroll-hint mt-4 rounded-2xl border border-line bg-card shadow-sm">
-        <div className="overflow-x-auto rounded-2xl">
+        <div tabIndex={0} role="region" aria-label="Money to units table (scrolls sideways)" className="overflow-x-auto rounded-2xl">
           <table className="w-full text-xs sm:text-sm">
             <thead>
               <tr className="border-b border-line bg-paper text-left text-xs uppercase tracking-wider text-dim">
@@ -129,7 +129,7 @@ export default function UnitsIndex() {
           month, and what that many units runs in the house.
         </p>
         <div className="scroll-hint mt-4 rounded-2xl border border-line bg-card shadow-sm">
-          <div className="overflow-x-auto rounded-2xl">
+          <div tabIndex={0} role="region" aria-label="Units to cost table (scrolls sideways)" className="overflow-x-auto rounded-2xl">
             <table className="w-full text-xs sm:text-sm">
               <thead>
                 <tr className="border-b border-line bg-paper text-left text-xs uppercase tracking-wider text-dim">
