@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Calculator from "@/components/Calculator";
-import TariffStaircase from "@/components/TariffStaircase";
 import BuyPromo from "@/components/BuyPromo";
 import { AMOUNT_PAGES, UNIT_PAGES } from "@/lib/amounts";
 import { FIRST_DATE, HISTORY, totalDriftPct } from "@/lib/history";
@@ -82,25 +81,20 @@ export default function Home() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }} />
 
-      <section className="overflow-x-clip border-b border-line bg-ink text-white">
-        <div className="container-page grid items-center gap-6 py-12 sm:py-16 lg:grid-cols-[1fr_auto]">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-volt">Free · No login · Live tariffs</p>
-            <h1 className="font-display mt-3 max-w-2xl text-4xl font-bold leading-tight sm:text-5xl">
-              ZESA calculator with the{" "}
-              {/* Art-directed break: the yellow phrase gets its own line on
-                  desktop instead of wrapping mid-phrase. */}
-              <br className="hidden lg:block" />
-              <span className="text-volt">real stepped tariffs<span aria-hidden>.</span></span>
-            </h1>
-            <p className="mt-4 max-w-2xl text-lg text-white/70">
-              See exactly how many units your ZiG (ZWG) or US dollars buy — band by band, including the
-              6% REA levy and your 400 kWh monthly quota. Updated whenever ZERA changes the rates.
-            </p>
-          </div>
-          {/* The tariff itself, as a 3D object you can tilt — heights are the
-              real per-band rates, so the daily sync reshapes it. */}
-          <TariffStaircase />
+      <section className="border-b border-line bg-ink text-white">
+        <div className="container-page py-12 sm:py-16">
+          <p className="text-xs font-semibold uppercase tracking-widest text-volt">Free · No login · Live tariffs</p>
+          <h1 className="font-display mt-3 max-w-2xl text-4xl font-bold leading-tight sm:text-5xl">
+            ZESA calculator with the{" "}
+            {/* Art-directed break: the yellow phrase gets its own line on
+                desktop instead of wrapping mid-phrase. */}
+            <br className="hidden lg:block" />
+            <span className="text-volt">real stepped tariffs<span aria-hidden>.</span></span>
+          </h1>
+          <p className="mt-4 max-w-2xl text-lg text-white/70">
+            See exactly how many units your ZiG (ZWG) or US dollars buy — band by band, including the
+            6% REA levy and your 400 kWh monthly quota. Updated whenever ZERA changes the rates.
+          </p>
         </div>
       </section>
 
