@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { TARIFFS, BANDS, costForUnits, fmt, zwgToUsd } from "@/lib/tariff";
+import { TARIFFS, BANDS, bandColor, costForUnits, fmt, zwgToUsd } from "@/lib/tariff";
 import { UNIT_SLUGS } from "@/lib/amounts";
 import { BulbIcon, WrenchIcon } from "@/components/icons";
 import { FIRST_DATE, HISTORY, monthLabel } from "@/lib/history";
@@ -79,9 +79,18 @@ export default function TariffsPage() {
               </tr>
             </thead>
             <tbody>
-              {BANDS.map((b) => (
+              {BANDS.map((b, i) => (
                 <tr key={b.label} className="border-b border-line last:border-0">
-                  <td className="px-2 py-3 font-medium sm:px-4">{b.label}</td>
+                  <td className="px-2 py-3 font-medium sm:px-4">
+                    <span className="flex items-center gap-2">
+                      <span aria-hidden className="inline-block h-3 w-3 shrink-0 rounded-sm" style={{ background: bandColor(i) }} />
+                      {b.label}
+                    </span>
+                    {/* Price bar: band rate as a share of the top rate — makes the 3.2× ladder visible. */}
+                    <span aria-hidden className="mt-1.5 ml-5 block h-1 max-w-40 rounded-full bg-paper">
+                      <span className="block h-1 rounded-full" style={{ width: `${Math.round((b.inclLevyZwg / BANDS[BANDS.length - 1].inclLevyZwg) * 100)}%`, background: bandColor(i) }} />
+                    </span>
+                  </td>
                   <td className="whitespace-nowrap px-2 py-3 text-right font-mono sm:px-4">{fmt(b.baseZwg, 4)}</td>
                   <td className="whitespace-nowrap px-2 py-3 text-right font-mono sm:px-4 font-semibold">{fmt(b.inclLevyZwg, 4)}</td>
                   <td className="whitespace-nowrap px-2 py-3 text-right font-mono sm:px-4">${fmt(b.usdApprox)}</td>

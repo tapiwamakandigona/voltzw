@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { WhatsAppIcon } from "@/components/icons";
 import {
-  costForUnits, unitsForAmount, remainingQuota, zwgToUsd, usdToZwg, fmt,
+  BANDS, bandColor, costForUnits, unitsForAmount, remainingQuota, zwgToUsd, usdToZwg, fmt,
   MONTHLY_QUOTA, RATE, type BandSlice,
 } from "@/lib/tariff";
 import { BulbIcon } from "@/components/icons";
@@ -46,7 +46,12 @@ function SliceTable({ slices, currency }: { slices: BandSlice[]; currency: Curre
           <tbody>
             {slices.map((s, i) => (
               <tr key={i} className="border-b border-line last:border-0">
-                <td className="px-2 py-2 whitespace-nowrap sm:px-3">{s.band.label}</td>
+                <td className="px-2 py-2 whitespace-nowrap sm:px-3">
+                  <span className="flex items-center gap-2">
+                    <span aria-hidden className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: bandColor(BANDS.findIndex((b) => b.label === s.band.label)) }} />
+                    {s.band.label}
+                  </span>
+                </td>
                 <td className="px-2 py-2 text-right font-mono sm:px-3">{fmt(s.units, 1)}</td>
                 <td className="px-2 py-2 text-right font-mono whitespace-nowrap sm:px-3">
                   {currency === "ZWG" ? fmt(s.band.inclLevyZwg, 4) : fmt(zwgToUsd(s.band.inclLevyZwg), 4)}
@@ -212,6 +217,20 @@ export default function Calculator() {
           <p className="text-xs uppercase tracking-wider text-white/60">{mode === "money" ? "You get" : "You pay"}</p>
           <p className="font-display mt-1 text-3xl font-bold text-volt sm:text-4xl">{result.headline}</p>
           <p className="mt-1 text-sm text-white/70">{result.sub}</p>
+          {result.slices.length > 1 && (
+            <div aria-hidden className="mt-3 flex h-2 overflow-hidden rounded-full">
+              {result.slices.map((sl, i) => (
+                <span
+                  key={i}
+                  className="h-2"
+                  style={{
+                    width: `${Math.max(3, (sl.costZwg / result.slices.reduce((a, x) => a + x.costZwg, 0)) * 100)}%`,
+                    background: bandColor(BANDS.findIndex((b) => b.label === sl.band.label)),
+                  }}
+                />
+              ))}
+            </div>
+          )}
           <div className="mt-4 flex flex-wrap gap-2">
             <a
               href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
@@ -236,7 +255,10 @@ export default function Calculator() {
 
       <div className="mt-5 rounded-lg border border-volt/60 bg-volt/10 p-4 text-sm leading-relaxed">
         <p className="font-semibold"><BulbIcon />Quota tip</p>
-        <p className="mt-1">
+        <div aria-hidden className="mt-2 h-1.5 overflow-hidden rounded-full bg-card">
+          <div className="h-1.5 rounded-full bg-volt-deep transition-[width]" style={{ width: `${quotaPct}%` }} />
+        </div>
+        <p className="mt-2">
           You have used <strong>{fmt(quotaUsed, 0)} of {MONTHLY_QUOTA} kWh</strong> ({quotaPct}%) of this month&apos;s
           discounted quota. Buying your remaining <strong>{fmt(quota.units, 0)} discounted units</strong> before the
           quota resets on the 1st costs <strong>ZWG {fmt(quota.costZwg)}</strong> (≈ US${fmt(zwgToUsd(quota.costZwg))}).
