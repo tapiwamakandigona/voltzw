@@ -16,6 +16,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/buy/`, lastModified, changeFrequency: "weekly", priority: 0.95 },
     { url: `${base}/zesa-tariffs/`, lastModified, changeFrequency: "daily", priority: 0.9 },
     { url: `${base}/zesa-tariffs/history/`, lastModified, changeFrequency: "daily", priority: 0.8 },
+    { url: `${base}/zesa-tariffs/pdf/`, lastModified, changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/units/`, lastModified, changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/retrieve-zesa-token/`, changeFrequency: "monthly", priority: 0.9 },
   ];
