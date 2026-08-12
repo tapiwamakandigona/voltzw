@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "prebuild": "node scripts/make-tariff-pdf.mjs && node scripts/make-og.mjs"
+    "prebuild": "node scripts/make-tariff-pdf.mjs && node scripts/make-og.mjs",
+    "postbuild": "node scripts/stamp-csp.mjs"
   },
   "dependencies": {
     "next": "16.3.0",
