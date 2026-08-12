@@ -3,7 +3,7 @@ import Link from "next/link";
 import { TARIFFS, BANDS, bandColor, costForUnits, fmt, zwgToUsd } from "@/lib/tariff";
 import { UNIT_SLUGS } from "@/lib/amounts";
 import { BulbIcon, WrenchIcon } from "@/components/icons";
-import { FIRST_DATE, HISTORY, monthLabel } from "@/lib/history";
+import { FIRST_DATE, HISTORY, monthKeys, monthLabel, monthRange } from "@/lib/history";
 import { breadcrumb, jsonLdProps, tariffDataset } from "@/lib/seo";
 
 /** The month this build is describing. People search "zesa tariffs august 2026",
@@ -197,6 +197,42 @@ export default function TariffsPage() {
             </p>
           </div>
         </div>
+      </section>
+
+      {/* Month archive: /zesa-tariffs/2026-05/ got +690% impressions in GSC —
+          people search "zesa tariffs {month} {year}", so every month page gets
+          a crawlable, human-friendly link from this hub instead of being
+          reachable only via prev/next hops. */}
+      <section className="container-page mt-14">
+        <h2 className="font-display text-2xl font-bold">
+          Tariffs by month<span aria-hidden className="text-volt">.</span>
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm text-dim">
+          What ZESA charged in any month since {FIRST_DATE} — every schedule published that month,
+          or the rate that stayed in force when nothing changed.
+        </p>
+        <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {monthKeys().map((key) => {
+            const range = monthRange(key);
+            return (
+              <li key={key}>
+                <Link
+                  href={`/zesa-tariffs/${key}/`}
+                  className="block rounded-xl border border-line bg-card px-4 py-3 transition hover:border-volt hover:shadow-sm"
+                >
+                  <span className="block text-sm font-semibold">{monthLabel(key)}</span>
+                  {range && (
+                    <span className="mt-0.5 block text-xs tabular-nums text-dim">
+                      {range.min === range.max
+                        ? `ZWG ${fmt(range.min, 4)}/unit`
+                        : `ZWG ${fmt(range.min, 4)}–${fmt(range.max, 4)}/unit`}
+                    </span>
+                  )}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </section>
 
       <section className="container-page mt-14">
