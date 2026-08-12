@@ -14,6 +14,7 @@ import {
 } from "@/components/buy-helpers";
 
 import { API, canBuy, useHealth } from "@/components/payment-mode";
+import { track } from "@/lib/analytics";
 
 // The launch gate is resolved at runtime from the function's /health
 // (see payment-mode.ts) — the build-time env var is only the first paint.
@@ -164,6 +165,7 @@ export default function BuyFlow() {
 
     if (PAYMENT_MODE === "semi_auto") {
       // SemiAutoPay creates the order and walks the customer through EcoCash.
+      track("buy_token_intent", { payment_mode: "semi_auto", denomination: currency });
       setStep("ecocash");
       return;
     }
@@ -180,6 +182,7 @@ export default function BuyFlow() {
           amount: amt,
         }),
       }).catch(() => { /* never block the UI on the waitlist */ });
+      track("join_waitlist", { denomination: currency });
       setStep("waitlisted");
       return;
     }
@@ -202,6 +205,7 @@ export default function BuyFlow() {
       // CONTRACT-3: keep the ref recoverable in case the return trip to
       // /buy/status loses the ?ref= query string (trailing-slash redirect).
       if (r.ref) saveLastOrderRef(r.ref);
+      track("buy_token_intent", { payment_mode: "paynow", denomination: currency });
       setStep("redirecting");
       window.location.href = redirectUrl;
     } catch (err) {

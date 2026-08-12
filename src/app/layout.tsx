@@ -127,6 +127,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Header />
         <main id="main">{children}</main>
         <Footer />
+        <script src="/analytics.js" defer />
       </body>
     </html>
   );
