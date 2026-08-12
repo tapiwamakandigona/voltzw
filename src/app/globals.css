@@ -58,12 +58,16 @@ html { scroll-behavior: smooth; }
    volt-deep keeps ≥3:1 non-text contrast on paper/card backgrounds. */
 a:focus-visible,
 button:focus-visible,
-input:focus-visible,
+input:focus-visible:not(.focus-quiet),
 select:focus-visible,
 textarea:focus-visible {
   outline: 2px solid var(--volt-deep);
   outline-offset: 2px;
 }
+
+/* Fields that paint their own ≥3:1 focus indicator (border swap + halo) opt out of
+   the offset outline above — stacked, the two read as a heavy double ring. */
+.focus-quiet:focus-visible { outline: none; }
 
 body {
   background: var(--paper);

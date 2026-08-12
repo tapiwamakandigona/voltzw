@@ -257,7 +257,7 @@ export default function BuyFlow() {
               onChange={(e) => setMeter(e.target.value.replace(/\D/g, ""))}
               placeholder="e.g. 04123456789"
               maxLength={13}
-              className="mt-2 w-full rounded-lg border border-line bg-paper px-4 py-3 font-mono text-lg tracking-wide outline-none transition focus:border-volt focus:ring-2 focus:ring-volt/30"
+              className="focus-quiet mt-2 w-full rounded-lg border border-line bg-paper px-4 py-3 font-mono text-lg tracking-wide outline-none transition focus:border-volt-deep focus:shadow-[0_0_0_4px_rgba(245,184,0,0.18)]"
               required
             />
             <p className="mt-2 text-xs text-dim">
@@ -343,10 +343,10 @@ export default function BuyFlow() {
                 placeholder={currency === "USD" ? "Custom amount, e.g. 15" : "Custom amount, e.g. 350"}
                 aria-invalid={amtError ? true : undefined}
                 aria-describedby={amtError ? "amount-error" : undefined}
-                className={`mt-2 w-full rounded-lg border bg-paper px-4 py-3 font-mono text-lg outline-none transition focus:ring-2 ${
+                className={`focus-quiet mt-2 w-full rounded-lg border bg-paper px-4 py-3 font-mono text-lg outline-none transition ${
                   amtError
-                    ? "border-danger-border focus:border-danger focus:ring-danger/20"
-                    : "border-line focus:border-volt focus:ring-volt/30"
+                    ? "border-danger-border focus:border-danger focus:shadow-[0_0_0_4px_rgba(180,35,24,0.15)]"
+                    : "border-line focus:border-volt-deep focus:shadow-[0_0_0_4px_rgba(245,184,0,0.18)]"
                 }`}
                 required
               />
@@ -372,10 +372,10 @@ export default function BuyFlow() {
                   maxLength={13}
                   aria-invalid={phoneInvalid ? true : undefined}
                   aria-describedby="phone-help"
-                  className={`mt-2 w-full rounded-lg border bg-paper px-4 py-2.5 font-mono outline-none transition focus:ring-2 ${
+                  className={`focus-quiet mt-2 w-full rounded-lg border bg-paper px-4 py-2.5 font-mono outline-none transition ${
                     phoneInvalid
-                      ? "border-danger-border focus:border-danger focus:ring-danger/20"
-                      : "border-line focus:border-volt focus:ring-volt/30"
+                      ? "border-danger-border focus:border-danger focus:shadow-[0_0_0_4px_rgba(180,35,24,0.15)]"
+                      : "border-line focus:border-volt-deep focus:shadow-[0_0_0_4px_rgba(245,184,0,0.18)]"
                   }`}
                   required
                 />
@@ -399,7 +399,7 @@ export default function BuyFlow() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="mt-2 w-full rounded-lg border border-line bg-paper px-4 py-2.5 outline-none transition focus:border-volt focus:ring-2 focus:ring-volt/30"
+                  className="focus-quiet mt-2 w-full rounded-lg border border-line bg-paper px-4 py-2.5 outline-none transition focus:border-volt-deep focus:shadow-[0_0_0_4px_rgba(245,184,0,0.18)]"
                 />
               </div>
             </div>
