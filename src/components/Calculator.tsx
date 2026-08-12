@@ -123,17 +123,21 @@ export default function Calculator() {
   const quotaPct = Math.round((quotaUsed / MONTHLY_QUOTA) * 100);
 
   const inputCls =
-    "w-full rounded-lg border border-line bg-card px-4 py-3 text-lg font-mono outline-none focus:border-volt-deep focus:ring-2 focus:ring-volt/40";
+    // The border swap (line → volt-deep, ≥3:1) plus soft halo IS the focus indicator here;
+    // the global 2px offset outline on top of it read as a heavy double ring (operator flag).
+    "focus-quiet w-full rounded-lg border border-line bg-card px-4 py-3 text-lg font-mono outline-none transition-shadow focus:border-volt-deep focus:shadow-[0_0_0_4px_rgba(245,184,0,0.18)]";
 
   return (
     <div className="rounded-2xl border border-line bg-card p-5 shadow-sm sm:p-7">
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <div role="group" aria-label="Calculation direction" className="grid flex-1 grid-cols-2 gap-2 rounded-lg bg-paper p-1 text-sm font-semibold">
+      {/* Two compact segmented controls: what you're converting, and in which money.
+          Neither stretches — a control's width should signal its importance, not fill space. */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div role="group" aria-label="Calculation direction" className="grid grid-cols-2 gap-1 rounded-lg bg-paper p-1 text-sm font-semibold sm:inline-grid">
           <button
             type="button"
             aria-pressed={mode === "money"}
             onClick={() => setMode("money")}
-            className={`min-h-11 rounded-md px-3 py-2 transition ${mode === "money" ? "bg-ink text-white" : "text-dim hover:text-ink"}`}
+            className={`min-h-11 whitespace-nowrap rounded-md px-4 py-2 transition sm:px-5 ${mode === "money" ? "bg-ink text-white shadow-sm" : "text-dim hover:text-ink"}`}
           >
             Money → Units
           </button>
@@ -141,65 +145,68 @@ export default function Calculator() {
             type="button"
             aria-pressed={mode === "units"}
             onClick={() => setMode("units")}
-            className={`min-h-11 rounded-md px-3 py-2 transition ${mode === "units" ? "bg-ink text-white" : "text-dim hover:text-ink"}`}
+            className={`min-h-11 whitespace-nowrap rounded-md px-4 py-2 transition sm:px-5 ${mode === "units" ? "bg-ink text-white shadow-sm" : "text-dim hover:text-ink"}`}
           >
             Units → Money
           </button>
         </div>
-        <div role="group" aria-label="Currency" className="grid grid-cols-2 gap-2 rounded-lg bg-paper p-1 text-sm font-semibold sm:w-44">
+        <div role="group" aria-label="Currency" className="grid grid-cols-2 gap-1 rounded-lg bg-paper p-1 text-sm font-semibold sm:inline-grid">
           {(["ZWG", "USD"] as const).map((c) => (
             <button
               key={c}
               type="button"
               aria-pressed={currency === c}
+              aria-label={c === "USD" ? "US dollars" : "ZiG (ZWG)"}
               onClick={() => switchCurrency(c)}
-              className={`min-h-11 whitespace-nowrap rounded-md px-3 py-2 transition ${currency === c ? "bg-volt text-ink" : "text-dim hover:text-ink"}`}
+              className={`min-h-11 whitespace-nowrap rounded-md px-4 py-2 transition sm:px-5 ${currency === c ? "bg-volt text-ink shadow-sm" : "text-dim hover:text-ink"}`}
             >
-              {c === "USD" ? "US$" : "ZiG (ZWG)"}
+              {c === "USD" ? "US$" : "ZiG"}
             </button>
           ))}
         </div>
       </div>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        {mode === "money" ? (
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-dim">
-              Amount to spend ({currency === "USD" ? "US$" : "ZiG"})
-            </span>
-            <input type="number" inputMode="decimal" min="0" max={MAX} value={amount} onChange={(e) => setAmount(e.target.value)} aria-invalid={!!result.error} aria-describedby={result.error ? "calc-error" : undefined} className={inputCls} />
-          </label>
-        ) : (
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-dim">Units you need (kWh)</span>
-            <input type="number" inputMode="decimal" min="0" max={MAX} value={units} onChange={(e) => setUnits(e.target.value)} aria-invalid={!!result.error} aria-describedby={result.error ? "calc-error" : undefined} className={inputCls} />
-          </label>
-        )}
-        <label className="block">
+        <div>
+          {mode === "money" ? (
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium text-dim">
+                Amount to spend ({currency === "USD" ? "US$" : "ZiG"})
+              </span>
+              <input type="number" inputMode="decimal" min="0" max={MAX} value={amount} onChange={(e) => setAmount(e.target.value)} aria-invalid={!!result.error} aria-describedby={result.error ? "calc-error" : undefined} className={inputCls} />
+            </label>
+          ) : (
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium text-dim">Units you need (kWh)</span>
+              <input type="number" inputMode="decimal" min="0" max={MAX} value={units} onChange={(e) => setUnits(e.target.value)} aria-invalid={!!result.error} aria-describedby={result.error ? "calc-error" : undefined} className={inputCls} />
+            </label>
+          )}
+          {/* One-tap presets live directly under the field they fill —
+              93% of visitors are on phones, where typing is the slow part. */}
+          <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Quick amounts">
+            {(mode === "money" ? (currency === "USD" ? QUICK_USD : QUICK_ZWG) : QUICK_UNITS).map((v) => {
+              const current = mode === "money" ? amount : units;
+              const active = parseFloat(current) === v;
+              return (
+                <button
+                  key={`${mode}-${currency}-${v}`}
+                  type="button"
+                  onClick={() => (mode === "money" ? setAmount(String(v)) : setUnits(String(v)))}
+                  aria-pressed={active}
+                  className={`min-h-9 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                    active ? "border-volt-deep bg-volt text-ink" : "border-line bg-paper text-dim hover:border-volt-deep hover:text-ink"
+                  }`}
+                >
+                  {mode === "money" ? (currency === "USD" ? `US$${v}` : `ZiG ${v}`) : `${v} units`}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <label className="block self-start">
           <span className="mb-1 block text-sm font-medium text-dim">Units already bought this month</span>
           <input type="number" inputMode="decimal" min="0" value={already} onChange={(e) => setAlready(e.target.value)} className={inputCls} />
         </label>
-      </div>
-
-      {/* One-tap presets — 93% of visitors are on phones, where typing is the slow part. */}
-      <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Quick amounts">
-        {(mode === "money" ? (currency === "USD" ? QUICK_USD : QUICK_ZWG) : QUICK_UNITS).map((v) => {
-          const current = mode === "money" ? amount : units;
-          const active = parseFloat(current) === v;
-          return (
-            <button
-              key={`${mode}-${currency}-${v}`}
-              type="button"
-              onClick={() => (mode === "money" ? setAmount(String(v)) : setUnits(String(v)))}
-              aria-pressed={active}
-              className={`min-h-9 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                active ? "border-volt-deep bg-volt text-ink" : "border-line bg-paper text-dim hover:border-volt-deep hover:text-ink"
-              }`}
-            >
-              {mode === "money" ? (currency === "USD" ? `US$${v}` : `ZiG ${v}`) : `${v} units`}
-            </button>
-          );
-        })}
       </div>
 
       {result.error ? (
