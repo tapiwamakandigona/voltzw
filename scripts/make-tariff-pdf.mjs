@@ -12,6 +12,9 @@ const fmt = (n, d = 2) => n.toLocaleString("en-US", { minimumFractionDigits: d, 
 const INK = "#18181b", DIM = "#52525b", VOLT = "#b45309", LINE = "#e4e4e7";
 const BAND_COLORS = ["#1a9850", "#91cf60", "#d9ef8b", "#fee08b", "#fc8d59", "#d73027"];
 const doc = new PDFDocument({ size: "A4", margins: { top: 54, bottom: 54, left: 54, right: 54 } });
+// public/ holds only generated artifacts and is gitignored, so it does not
+// exist on a fresh CI checkout — create it before writing.
+fs.mkdirSync(new URL("../public/", import.meta.url), { recursive: true });
 doc.pipe(fs.createWriteStream(new URL("../public/zesa-tariffs.pdf", import.meta.url)));
 
 // Brand header: volt-yellow band + wordmark, same identity as the site.
