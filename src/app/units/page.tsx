@@ -6,8 +6,8 @@ import { daysOfQuotaUse, formatDuration } from "@/lib/appliances";
 import { breadcrumb, jsonLdProps } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: `ZESA Units per Amount — What Your Money Buys in Zimbabwe (${TARIFFS.effectiveDate})`,
-  description: `How many ZESA units (kWh) you get for ZWG 50 to ZWG 5,000 and US$1 to US$100, what 50 to 400 units cost, and the effective price per kWh for each — at the ZERA-approved ZETDC tariffs effective ${TARIFFS.effectiveDate}, incl. the 6% REA levy. Updated daily.`,
+  title: `ZESA Units per Amount — What Your ZiG (ZWG) or USD Buys (${TARIFFS.effectiveDate})`,
+  description: `How many ZESA units (kWh) you get for ZiG (ZWG) 50 to 5,000 and US$1 to US$100, what 50 to 400 units cost, and the effective price per kWh for each — at the ZERA-approved ZETDC tariffs effective ${TARIFFS.effectiveDate}, incl. the 6% REA levy. Updated daily.`,
   alternates: { canonical: "/units/" },
 };
 
@@ -49,13 +49,13 @@ export default function UnitsIndex() {
       <h2 className="font-display text-xl font-bold">{heading}</h2>
       <p className="mt-2 text-sm text-dim">{note}</p>
       <div className="scroll-hint mt-4 rounded-2xl border border-line bg-card shadow-sm">
-        <div className="overflow-x-auto rounded-2xl">
+        <div tabIndex={0} role="region" aria-label="Money to units table (scrolls sideways)" className="overflow-x-auto rounded-2xl">
           <table className="w-full text-xs sm:text-sm">
             <thead>
               <tr className="border-b border-line bg-paper text-left text-xs uppercase tracking-wider text-dim">
                 <th className="px-2 py-3 font-medium sm:px-4">You pay</th>
                 <th className="px-2 py-3 text-right font-medium sm:px-4">You get</th>
-                <th className="whitespace-nowrap px-2 py-3 text-right font-medium sm:px-4">ZWG / kWh</th>
+                <th className="hidden whitespace-nowrap px-2 py-3 text-right font-medium sm:table-cell sm:px-4">ZWG / kWh</th>
                 <th className="whitespace-nowrap px-2 py-3 text-right font-medium sm:px-4">Lasts</th>
               </tr>
             </thead>
@@ -68,7 +68,7 @@ export default function UnitsIndex() {
                     </Link>
                   </td>
                   <td className="px-2 py-3 text-right tabular-nums sm:px-4">{fmt(p.units, 1)} kWh</td>
-                  <td className="px-2 py-3 text-right tabular-nums text-dim sm:px-4">
+                  <td className="hidden px-2 py-3 text-right tabular-nums text-dim sm:table-cell sm:px-4">
                     {p.units > 0 ? fmt(p.amountZwg / p.units, 3) : "—"}
                   </td>
                   <td className="whitespace-nowrap px-2 py-3 text-right tabular-nums text-dim sm:px-4">
@@ -129,14 +129,14 @@ export default function UnitsIndex() {
           month, and what that many units runs in the house.
         </p>
         <div className="scroll-hint mt-4 rounded-2xl border border-line bg-card shadow-sm">
-          <div className="overflow-x-auto rounded-2xl">
+          <div tabIndex={0} role="region" aria-label="Units to cost table (scrolls sideways)" className="overflow-x-auto rounded-2xl">
             <table className="w-full text-xs sm:text-sm">
               <thead>
                 <tr className="border-b border-line bg-paper text-left text-xs uppercase tracking-wider text-dim">
                   <th className="px-2 py-3 font-medium sm:px-4">Units</th>
                   <th className="px-2 py-3 text-right font-medium sm:px-4">Cost (ZWG)</th>
                   <th className="whitespace-nowrap px-2 py-3 text-right font-medium sm:px-4">≈ USD</th>
-                  <th className="whitespace-nowrap px-2 py-3 text-right font-medium sm:px-4">ZWG / kWh</th>
+                  <th className="hidden whitespace-nowrap px-2 py-3 text-right font-medium sm:table-cell sm:px-4">ZWG / kWh</th>
                   <th className="whitespace-nowrap px-2 py-3 text-right font-medium sm:px-4">% of quota</th>
                 </tr>
               </thead>
@@ -150,7 +150,7 @@ export default function UnitsIndex() {
                     </td>
                     <td className="px-2 py-3 text-right tabular-nums sm:px-4">{fmt(u.costZwg)}</td>
                     <td className="px-2 py-3 text-right tabular-nums text-dim sm:px-4">${fmt(u.costUsd)}</td>
-                    <td className="px-2 py-3 text-right tabular-nums text-dim sm:px-4">
+                    <td className="hidden px-2 py-3 text-right tabular-nums text-dim sm:table-cell sm:px-4">
                       {fmt(u.costZwg / u.units, 3)}
                     </td>
                     <td className="px-2 py-3 text-right tabular-nums text-dim sm:px-4">

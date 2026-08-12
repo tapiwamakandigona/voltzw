@@ -7,8 +7,8 @@ import { FIRST_DATE, HISTORY, totalDriftPct } from "@/lib/history";
 import { TARIFFS, MONTHLY_QUOTA, remainingQuota, zwgToUsd, fmt } from "@/lib/tariff";
 
 export const metadata: Metadata = {
-  title: `ZESA Calculator Zimbabwe — Money to Units at Today's ZETDC Tariffs (${TARIFFS.effectiveDate})`,
-  description: `Free ZESA token calculator for Zimbabwe (ZETDC), on the ZERA-approved tariffs effective ${TARIFFS.effectiveDate} — verified daily, not monthly. See exactly how many units (kWh) your money buys: all six stepped bands, the 6% REA levy and your 400 kWh quota.`,
+  title: `ZESA Calculator Zimbabwe — ZiG (ZWG) & USD to Units, ZETDC Tariffs ${TARIFFS.effectiveDate}`,
+  description: `Free ZESA token calculator for Zimbabwe (ZETDC) in ZiG (ZWG) or US dollars, on the ZERA-approved tariffs effective ${TARIFFS.effectiveDate} — verified daily, not monthly. See exactly how many units (kWh) your money buys: all six stepped bands, the 6% REA levy and your 400 kWh quota.`,
   alternates: { canonical: "/" },
 };
 
@@ -40,6 +40,14 @@ const faqs = [
   {
     q: "How do I check my ZESA balance online?",
     a: "Your remaining units live on the meter itself — press 07 on most prepaid meters to display the balance. To see your purchase history and past tokens, use the ZETDC self-service portal, or the channel you bought from (EcoCash, your bank, or an online vendor).",
+  },
+  {
+    q: "Is ZiG the same as ZWG?",
+    a: "Yes. ZiG (Zimbabwe Gold) is the currency's name and ZWG is its official code — they are the same money. ZETDC bills prepaid electricity in ZiG, so the ZiG figures here are exact; USD figures are estimates at the reference rate published with the tariffs.",
+  },
+  {
+    q: "What are the ZESA tariffs in USD?",
+    a: `ZETDC prices are set in ZiG, but converted at the reference rate the ${TARIFFS.effectiveDate} schedule works out to roughly US$${TARIFFS.bands[0].usdApprox.toFixed(2)} per unit for the first 50 units, rising band by band to about US$${TARIFFS.bands[TARIFFS.bands.length - 1].usdApprox.toFixed(2)} per unit above 400 kWh. The full table in both currencies is on our tariffs page.`,
   },
   {
     q: "Can I buy ZESA tokens on VoltZW?",
@@ -84,8 +92,8 @@ export default function Home() {
             <span className="text-volt">real stepped tariffs<span aria-hidden>.</span></span>
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-white/70">
-            See exactly how many units your money buys — band by band, including the 6% REA levy and your
-            400 kWh monthly quota. Updated whenever ZERA changes the rates.
+            See exactly how many units your ZiG (ZWG) or US dollars buy — band by band, including the
+            6% REA levy and your 400 kWh monthly quota. Updated whenever ZERA changes the rates.
           </p>
         </div>
       </section>

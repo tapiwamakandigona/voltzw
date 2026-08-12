@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!page) return {};
   const units = fmt(page.units, 1);
   return {
-    title: `How many ZESA units is ${page.display}? ${units} kWh in Zimbabwe (${TARIFFS.effectiveDate})`,
+    title: `How many ZESA units is ${page.display}${page.currency === "ZWG" ? " (ZWG)" : ""}? ${units} kWh in Zimbabwe (${TARIFFS.effectiveDate})`,
     description: `${page.display} buys ${units} kWh of ZESA prepaid electricity at the ZERA-approved ZETDC tariffs effective ${TARIFFS.effectiveDate}, including the 6% REA levy. Full band-by-band breakdown for Zimbabwe, updated daily.`,
     alternates: { canonical: `/units/${page.slug}/` },
   };

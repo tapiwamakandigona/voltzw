@@ -1,0 +1,1 @@
+VoltZW — ZESA calculator with the current stepped tariffs in ZiG (ZWG) and USD, shown as a six-band staircase
