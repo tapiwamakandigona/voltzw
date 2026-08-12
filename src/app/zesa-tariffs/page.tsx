@@ -60,9 +60,9 @@ export default function TariffsPage() {
             <Link href="/zesa-tariffs/history/" className="underline hover:text-volt">
               See how these rates have moved since {FIRST_DATE} →
             </Link>
-            <a href="/zesa-tariffs.pdf" className="underline hover:text-volt">
+            <Link href="/zesa-tariffs/pdf/" className="underline hover:text-volt">
               Download the {CURRENT_MONTH_LABEL} tariff table (PDF) →
-            </a>
+            </Link>
           </p>
         </div>
       </section>
