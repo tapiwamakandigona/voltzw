@@ -8,6 +8,42 @@ export const metadata: Metadata = {
   alternates: { canonical: "/retrieve-zesa-token/" },
 };
 
+/** The exact questions people type into Google ("zesa token not received",
+ *  "how to retrieve zesa token on zb bank") — answered visibly on the page
+ *  and marked up as FAQPage so the answers are snippet-eligible. */
+const faq = [
+  {
+    q: "Why was my ZESA token not received by SMS?",
+    a: "The most common causes are SMS delays on the mobile network, buying with a different phone number than the one registered to the meter, or a temporary ZETDC vending outage. The token itself is almost never lost — it is stored by the channel you bought from (EcoCash, your bank, or the vendor), so you can retrieve it from there instead of waiting for the SMS.",
+  },
+  {
+    q: "How do I retrieve a ZESA token bought with EcoCash?",
+    a: "Dial *151#, go to Make Payment and check your Pay Bill history, or look through your EcoCash SMS statement — the token is in the transaction record. You can also call Econet on 114 and ask for the token to be resent.",
+  },
+  {
+    q: "How do I retrieve a ZESA token on ZB, CBZ, Steward or another bank?",
+    a: "Reopen your bank app's ZESA or bill-payments section and open the transaction details — the token is usually stored with the transaction. For USSD purchases, check the confirmation SMS thread. If you cannot find it, contact the bank's support line with your transaction reference number.",
+  },
+  {
+    q: "Can I view my old ZESA tokens online?",
+    a: "Yes. Register on the ZETDC self-service portal at selfservice.zetdc.co.zw using your meter number and any past token, and you can view your full token purchase history whenever an SMS goes missing.",
+  },
+  {
+    q: "The token says 'used' or the meter rejects it — what now?",
+    a: "Check that the token was generated for your exact meter number: a common cause is buying against the wrong meter. If the meter number is right, take the token, your meter number and proof of payment to a ZETDC banking hall, or call the ZETDC national call centre — they can verify and reissue it.",
+  },
+];
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faq.map((f) => ({
+    "@type": "Question",
+    name: f.q,
+    acceptedAnswer: { "@type": "Answer", text: f.a },
+  })),
+};
+
 const howToJsonLd = {
   "@context": "https://schema.org",
   "@type": "HowTo",
@@ -69,7 +105,7 @@ const methods = [
 export default function RetrievePage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([howToJsonLd, faqJsonLd]) }} />
       <section className="border-b border-line bg-ink text-white">
         <div className="container-page py-12">
           <p className="text-xs font-semibold uppercase tracking-widest text-volt">Token not showing? Start here</p>
@@ -121,6 +157,18 @@ export default function RetrievePage() {
             </ol>
           </div>
         ))}
+
+        <div className="pt-2">
+          <h2 className="font-display text-2xl font-bold">Token not received? Quick answers</h2>
+          <div className="mt-4 space-y-4">
+            {faq.map((f) => (
+              <details key={f.q} className="rounded-2xl border border-line bg-card p-5 shadow-sm">
+                <summary className="cursor-pointer font-semibold">{f.q}</summary>
+                <p className="mt-3 text-sm leading-relaxed text-dim">{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
 
         <div id="buy-on-voltzw" className="scroll-mt-20 rounded-2xl border border-line bg-ink p-6 text-white sm:p-8">
           <h2 className="font-display text-xl font-bold">Never lose a token again</h2>

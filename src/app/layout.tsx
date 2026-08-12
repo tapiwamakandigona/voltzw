@@ -92,6 +92,7 @@ function Footer() {
             <li><Link href="/retrieve-zesa-token/" className="inline-flex min-h-11 items-center hover:text-volt">Retrieve a lost token</Link></li>
             <li><Link href="/units/" className="inline-flex min-h-11 items-center hover:text-volt">Units per amount</Link></li>
             <li><Link href="/zesa-tariffs/history/" className="inline-flex min-h-11 items-center hover:text-volt">Tariff history &amp; free data</Link></li>
+            <li><Link href="/zesa-tariffs/pdf/" className="inline-flex min-h-11 items-center hover:text-volt">Tariffs PDF download</Link></li>
           </ul>
         </div>
         <div className="text-sm">
