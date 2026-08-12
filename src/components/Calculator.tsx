@@ -7,6 +7,8 @@ import {
   MONTHLY_QUOTA, RATE, type BandSlice,
 } from "@/lib/tariff";
 import { BulbIcon } from "@/components/icons";
+import { track } from "@/lib/analytics";
+import TariffStaircase from "@/components/TariffStaircase";
 
 type Mode = "money" | "units";
 type Currency = "ZWG" | "USD";
@@ -83,6 +85,21 @@ export default function Calculator() {
     // convert the typed amount so the result stays the same
     setAmount(String(Math.round((c === "USD" ? zwgToUsd(amt) : usdToZwg(amt)) * 100) / 100));
     setCurrency(c);
+    track("tariff_calculator_use", {
+      direction: mode === "money" ? "money_to_units" : "units_to_money",
+      denomination: c,
+      source: "denomination",
+    });
+  }
+
+  function setDirection(next: Mode) {
+    if (next === mode) return;
+    setMode(next);
+    track("tariff_calculator_use", {
+      direction: next === "money" ? "money_to_units" : "units_to_money",
+      denomination: currency,
+      source: "mode",
+    });
   }
 
   const result = useMemo(() => {
@@ -110,6 +127,15 @@ export default function Calculator() {
 
   const [copied, setCopied] = useState(false);
 
+  function trackInputUse(source: "input" | "quick_amount") {
+    if (result.error) return;
+    track("tariff_calculator_use", {
+      direction: mode === "money" ? "money_to_units" : "units_to_money",
+      denomination: currency,
+      source,
+    });
+  }
+
   // What actually gets forwarded around family WhatsApp groups: the number,
   // the price, the date it was true, and where to check it.
   const shareText = useMemo(() => {
@@ -136,7 +162,7 @@ export default function Calculator() {
           <button
             type="button"
             aria-pressed={mode === "money"}
-            onClick={() => setMode("money")}
+            onClick={() => setDirection("money")}
             className={`min-h-11 whitespace-nowrap rounded-md px-4 py-2 transition sm:px-5 ${mode === "money" ? "bg-ink text-white shadow-sm" : "text-dim hover:text-ink"}`}
           >
             Money → Units
@@ -144,7 +170,7 @@ export default function Calculator() {
           <button
             type="button"
             aria-pressed={mode === "units"}
-            onClick={() => setMode("units")}
+            onClick={() => setDirection("units")}
             className={`min-h-11 whitespace-nowrap rounded-md px-4 py-2 transition sm:px-5 ${mode === "units" ? "bg-ink text-white shadow-sm" : "text-dim hover:text-ink"}`}
           >
             Units → Money
@@ -173,12 +199,12 @@ export default function Calculator() {
               <span className="mb-1 block text-sm font-medium text-dim">
                 Amount to spend ({currency === "USD" ? "US$" : "ZiG"})
               </span>
-              <input type="number" inputMode="decimal" min="0" max={MAX} value={amount} onChange={(e) => setAmount(e.target.value)} aria-invalid={!!result.error} aria-describedby={result.error ? "calc-error" : undefined} className={inputCls} />
+              <input type="number" inputMode="decimal" min="0" max={MAX} value={amount} onChange={(e) => setAmount(e.target.value)} onBlur={() => trackInputUse("input")} aria-invalid={!!result.error} aria-describedby={result.error ? "calc-error" : undefined} className={inputCls} />
             </label>
           ) : (
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-dim">Units you need (kWh)</span>
-              <input type="number" inputMode="decimal" min="0" max={MAX} value={units} onChange={(e) => setUnits(e.target.value)} aria-invalid={!!result.error} aria-describedby={result.error ? "calc-error" : undefined} className={inputCls} />
+              <input type="number" inputMode="decimal" min="0" max={MAX} value={units} onChange={(e) => setUnits(e.target.value)} onBlur={() => trackInputUse("input")} aria-invalid={!!result.error} aria-describedby={result.error ? "calc-error" : undefined} className={inputCls} />
             </label>
           )}
           {/* One-tap presets live directly under the field they fill —
@@ -191,7 +217,15 @@ export default function Calculator() {
                 <button
                   key={`${mode}-${currency}-${v}`}
                   type="button"
-                  onClick={() => (mode === "money" ? setAmount(String(v)) : setUnits(String(v)))}
+                  onClick={() => {
+                    if (mode === "money") setAmount(String(v));
+                    else setUnits(String(v));
+                    track("tariff_calculator_use", {
+                      direction: mode === "money" ? "money_to_units" : "units_to_money",
+                      denomination: currency,
+                      source: "quick_amount",
+                    });
+                  }}
                   aria-pressed={active}
                   className={`min-h-9 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
                     active ? "border-volt-deep bg-volt text-ink" : "border-line bg-paper text-dim hover:border-volt-deep hover:text-ink"
@@ -238,13 +272,26 @@ export default function Calculator() {
               href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => track("share", {
+                method: "WhatsApp",
+                content_type: "tariff_result",
+                item_id: "zesa_tariff_result",
+              })}
               className="inline-flex min-h-9 items-center gap-2 rounded-full bg-[#25D366] px-4 py-1.5 text-xs font-bold text-ink transition hover:brightness-110"
             >
               <WhatsAppIcon />Share on WhatsApp
             </a>
             <button
               type="button"
-              onClick={() => { navigator.clipboard?.writeText(shareText); setCopied(true); setTimeout(() => setCopied(false), 1600); }}
+              onClick={() => {
+                navigator.clipboard?.writeText(shareText);
+                track("copy_tariff_result", {
+                  direction: mode === "money" ? "money_to_units" : "units_to_money",
+                  denomination: currency,
+                });
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1600);
+              }}
               className="min-h-9 rounded-full border border-white/25 px-4 py-1.5 text-xs font-semibold text-white/80 transition hover:border-white/60 hover:text-white"
             >
               {copied ? "Copied ✓" : "Copy result"}
@@ -274,5 +321,4 @@ export default function Calculator() {
       </p>
     </div>
   );
-}import TariffStaircase from "@/components/TariffStaircase";
-
+}
