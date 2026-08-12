@@ -11,7 +11,7 @@
     "prebuild": "node scripts/make-tariff-pdf.mjs && node scripts/make-og.mjs"
   },
   "dependencies": {
-    "next": "16.2.10",
+    "next": "16.3.0",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
@@ -21,7 +21,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.10",
+    "eslint-config-next": "16.3.0",
     "pdfkit": "^0.19.1",
     "sharp": "^0.35.3",
     "tailwindcss": "^4",
@@ -29,8 +29,6 @@
     "vitest": "^4.1.9"
   },
   "overrides": {
-    "next": {
-      "postcss": "8.5.10"
-    }
+    "postcss": "8.5.26"
   }
 }
