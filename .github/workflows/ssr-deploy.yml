@@ -1,0 +1,104 @@
+name: Deploy SSR wrapper
+
+# Reusable: called by deploy.yml (pushes to main) and tariff-sync.yml (daily
+# price updates commit with GITHUB_TOKEN, which never triggers deploy.yml, so
+# the sync must invoke this itself or production would stop seeing updates).
+on:
+  workflow_call:
+    secrets:
+      APPWRITE_API_KEY:
+        required: true
+
+env:
+  APPWRITE_ENDPOINT: https://fra.cloud.appwrite.io/v1
+  APPWRITE_PROJECT: voltzw
+
+jobs:
+  deploy-ssr:
+    name: Build, test, smoke, deploy (zesa-ssr)
+    runs-on: ubuntu-latest
+    steps:
+      # ref: main, not the triggering SHA — tariff-sync pushes its commit
+      # right before calling this, and that fresh commit is what must ship.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build static export
+        run: |
+          npm ci
+          npm run build
+
+      - name: Assemble site payload
+        run: |
+          rm -rf ssr/site
+          cp -r out ssr/site
+
+      - name: Install + test wrapper
+        working-directory: ssr
+        run: |
+          npm ci
+          npm test
+
+      - name: Build bundle
+        working-directory: ssr
+        run: |
+          npm run build:bundle
+          printf '{\n  "name": "zesa-ssr",\n  "private": true,\n  "scripts": { "start": "node server.js" }\n}\n' > dist-bundle/package.json
+
+      # esbuild ESM->CJS can produce a bundle that boots differently from the
+      # source; always smoke-run the exact artifact we ship.
+      - name: Smoke-run bundle
+        working-directory: ssr/dist-bundle
+        run: |
+          PORT=4399 node server.js &
+          SRV=$!
+          for i in $(seq 1 20); do
+            sleep 0.5
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4399/ || true)
+            [ "$code" = "200" ] && break
+          done
+          [ "$code" = "200" ] || { echo "bundle smoke failed (got $code)" >&2; kill $SRV; exit 1; }
+          hdr=$(curl -s -D- -o /dev/null http://127.0.0.1:4399/ | grep -ci 'x-frame-options: DENY' || true)
+          api=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4399/api/tariffs.json)
+          kill $SRV
+          [ "$hdr" = "1" ] || { echo "bundle missing security headers" >&2; exit 1; }
+          [ "$api" = "200" ] || { echo "tariff API not served by bundle" >&2; exit 1; }
+          echo "bundle smoke ✔ (200 + headers + tariff API)"
+
+      - name: Package bundle
+        run: tar -C ssr/dist-bundle -czf /tmp/ssr.tar.gz .
+
+      - name: Create + activate deployment
+        env:
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+        run: |
+          set -euo pipefail
+          resp=$(curl -sS -X POST \
+            "$APPWRITE_ENDPOINT/sites/zesa-ssr/deployments" \
+            -H "X-Appwrite-Project: $APPWRITE_PROJECT" \
+            -H "X-Appwrite-Key: $APPWRITE_API_KEY" \
+            -F "code=@/tmp/ssr.tar.gz" \
+            -F "activate=true")
+          dep_id=$(echo "$resp" | python3 -c "import json,sys; print(json.load(sys.stdin)['\$id'])")
+          echo "deployment: $dep_id"
+          for i in $(seq 1 30); do
+            sleep 10
+            status=$(curl -sS \
+              "$APPWRITE_ENDPOINT/sites/zesa-ssr/deployments/$dep_id" \
+              -H "X-Appwrite-Project: $APPWRITE_PROJECT" \
+              -H "X-Appwrite-Key: $APPWRITE_API_KEY" \
+              | python3 -c "import json,sys; print(json.load(sys.stdin)['status'])")
+            echo "status: $status"
+            case "$status" in
+              ready) echo "SSR deployed ✔"; exit 0 ;;
+              failed|canceled) echo "deployment $status" >&2; exit 1 ;;
+            esac
+          done
+          echo "timed out waiting for deployment" >&2
+          exit 1

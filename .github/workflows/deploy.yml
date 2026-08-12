@@ -44,3 +44,9 @@ jobs:
             --key "$APPWRITE_API_KEY"
           npx --yes appwrite-cli sites create-deployment \
             --site-id voltzw-web --code . --activate true
+
+  # The SSR wrapper serving zesa.tapiwa.me must ship the same content.
+  deploy-ssr:
+    uses: ./.github/workflows/ssr-deploy.yml
+    secrets:
+      APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
