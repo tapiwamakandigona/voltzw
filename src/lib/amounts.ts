@@ -24,7 +24,7 @@ function build(currency: "ZWG" | "USD", amount: number): AmountPage {
     amount,
     amountZwg,
     units: unitsForAmount(amountZwg).totalUnits,
-    display: currency === "ZWG" ? `ZWG ${amount.toLocaleString("en-US")}` : `US$${amount}`,
+    display: currency === "ZWG" ? `ZiG ${amount.toLocaleString("en-US")}` : `US$${amount}`,
   };
 }
 

@@ -116,7 +116,7 @@ export default function AdminOrders() {
           placeholder="Admin key"
           aria-label="Admin key"
           autoComplete="off"
-          className="w-full rounded-lg border border-line bg-paper px-4 py-2.5 font-mono text-sm outline-none transition focus:border-volt focus:ring-2 focus:ring-volt/30"
+          className="focus-quiet w-full rounded-lg border border-line bg-paper px-4 py-2.5 font-mono text-sm outline-none transition focus:border-volt-deep focus:shadow-[0_0_0_4px_rgba(245,184,0,0.18)]"
         />
         <button
           type="submit"

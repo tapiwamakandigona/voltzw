@@ -137,7 +137,7 @@ export default function HistoryPage() {
       <section className="container-page mt-10 mb-4">
         <h2 className="font-display text-2xl font-bold">Every recorded schedule</h2>
         <div className="mt-5 rounded-2xl border border-line bg-card shadow-sm">
-          <div className="overflow-x-auto rounded-2xl">
+          <div tabIndex={0} role="region" aria-label="Recorded tariff schedules (scrolls sideways)" className="overflow-x-auto rounded-2xl">
             <table className="w-full text-xs sm:text-sm">
               <thead>
                 <tr className="border-b border-line bg-paper text-left text-xs uppercase tracking-wider text-dim">

@@ -20,6 +20,15 @@
   --success: #067647;     /* AA on white and on --success-bg */
   --success-bg: #ecfdf3;
   --success-border: #abefc6;
+  /* Band heat ladder — one hue step per tariff band, cheap → expensive.
+     Used as small swatches/bars next to band rows so the stepped tariff is
+     visible at a glance. Text never sits on these; contrast rules don't apply. */
+  --band-1: #1a9850;
+  --band-2: #91cf60;
+  --band-3: #d9ef8b;
+  --band-4: #fee08b;
+  --band-5: #fc8d59;
+  --band-6: #d73027;
 }
 
 @theme inline {
@@ -49,12 +58,16 @@ html { scroll-behavior: smooth; }
    volt-deep keeps ≥3:1 non-text contrast on paper/card backgrounds. */
 a:focus-visible,
 button:focus-visible,
-input:focus-visible,
+input:focus-visible:not(.focus-quiet),
 select:focus-visible,
 textarea:focus-visible {
   outline: 2px solid var(--volt-deep);
   outline-offset: 2px;
 }
+
+/* Fields that paint their own ≥3:1 focus indicator (border swap + halo) opt out of
+   the offset outline above — stacked, the two read as a heavy double ring. */
+.focus-quiet:focus-visible { outline: none; }
 
 body {
   background: var(--paper);
@@ -97,4 +110,58 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .animate-rise { animation: rise 0.35s ease-out both; }
 @media (prefers-reduced-motion: reduce) {
   .animate-rise { animation: none; }
+}
+
+/* ---- 3D tariff staircase (result card) ----------------------------------
+   Lives inside the calculator result: the bands a purchase reaches light up,
+   unreached bands stay ghosted. True CSS 3D, cheap enough for the low-end
+   Androids that are 93% of traffic. Pointer tilt is gated in JS by
+   prefers-reduced-motion; there is no idle animation — this is an instrument
+   readout, not a decoration. */
+.stairs-wrap {
+  --rx: 62deg;
+  --rz: -45deg;
+  position: relative;
+  margin-top: 0.75rem;
+  touch-action: pan-y; /* tilting must not trap page scroll on phones */
+  overflow: hidden;
+  flex-shrink: 0;
+}
+@media (min-width: 640px) {
+  .stairs-wrap { margin-top: 0; }
+}
+.stairs-scene {
+  position: relative;
+  height: 168px;
+  width: 275px; /* 6 bars × (40+7) − gap */
+  margin: 0 auto;
+  transform-style: preserve-3d;
+  transform: translateY(14px) scale(0.94) rotateX(var(--rx)) rotateZ(var(--rz));
+  transition: transform 0.25s ease-out;
+}
+.stairs-bar {
+  position: absolute;
+  bottom: 44px;
+  left: 0;
+  transform-style: preserve-3d;
+}
+.stairs-face {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  /* Ghost state: unreached bands are wireframe-ish shells on the dark card. */
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.13);
+  transition: background 0.35s ease;
+}
+.stairs-on .stairs-face { box-shadow: none; }
+.stairs-top { transform: translateZ(var(--h)); border-radius: 2px; }
+.stairs-south { height: var(--h); transform: translateY(40px) rotateX(90deg); }
+.stairs-east { height: var(--h); transform: translateX(40px) rotateZ(90deg) rotateX(90deg); }
+.stairs-caption {
+  margin-top: 0.25rem;
+  text-align: center;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.55);
 }

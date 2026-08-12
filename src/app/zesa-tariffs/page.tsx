@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { TARIFFS, BANDS, costForUnits, fmt, zwgToUsd } from "@/lib/tariff";
+import { TARIFFS, BANDS, bandColor, costForUnits, fmt, zwgToUsd } from "@/lib/tariff";
 import { UNIT_SLUGS } from "@/lib/amounts";
 import { BulbIcon, WrenchIcon } from "@/components/icons";
 import { FIRST_DATE, HISTORY, monthLabel } from "@/lib/history";
@@ -14,8 +14,8 @@ const CURRENT_MONTH = TARIFFS.lastVerified.slice(0, 7);
 const CURRENT_MONTH_LABEL = monthLabel(CURRENT_MONTH);
 
 export const metadata: Metadata = {
-  title: `ZESA Tariffs ${CURRENT_MONTH_LABEL} — Today's ZETDC Rates, ZWG ${fmt(BANDS[0].inclLevyZwg, 2)}/unit`,
-  description: `Current ZERA-approved ZESA (ZETDC) tariffs for Zimbabwe in ${CURRENT_MONTH_LABEL}, effective ${TARIFFS.effectiveDate} and checked again on ${TARIFFS.lastVerified}: the first 50 units cost ZWG ${fmt(BANDS[0].inclLevyZwg, 4)} incl. the 6% REA levy. All six stepped bands in ZWG and USD, verified daily.`,
+  title: `ZESA Tariffs ${CURRENT_MONTH_LABEL} in ZiG & USD — Full ZETDC Table, ZWG ${fmt(BANDS[0].inclLevyZwg, 2)}/unit`,
+  description: `Current ZERA-approved ZESA (ZETDC) tariffs for Zimbabwe in ${CURRENT_MONTH_LABEL}, in ZiG (ZWG) and USD: the first 50 units cost ZWG ${fmt(BANDS[0].inclLevyZwg, 4)} incl. the 6% REA levy. Full table of all six stepped bands, verified daily — free PDF download.`,
   alternates: { canonical: "/zesa-tariffs/" },
 };
 
@@ -49,9 +49,9 @@ export default function TariffsPage() {
           </p>
           <h1 className="font-display mt-3 text-4xl font-bold">Current ZESA tariffs<span aria-hidden className="text-volt">.</span></h1>
           <p className="mt-3 max-w-2xl text-white/70">
-            ZERA-approved ZETDC prepaid tariffs for {CURRENT_MONTH_LABEL} — every band, with and
-            without the 6% Rural Electrification (REA) levy. Re-checked against the published
-            schedule every day, not once a month.
+            ZERA-approved ZETDC prepaid tariffs for {CURRENT_MONTH_LABEL}, in ZiG (ZWG) and US dollars —
+            every band, with and without the 6% Rural Electrification (REA) levy. Re-checked against
+            the published schedule every day, not once a month.
           </p>
           <p className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
             <Link href={`/zesa-tariffs/${CURRENT_MONTH}/`} className="underline hover:text-volt">
@@ -60,12 +60,15 @@ export default function TariffsPage() {
             <Link href="/zesa-tariffs/history/" className="underline hover:text-volt">
               See how these rates have moved since {FIRST_DATE} →
             </Link>
+            <a href="/zesa-tariffs.pdf" className="underline hover:text-volt">
+              Download the {CURRENT_MONTH_LABEL} tariff table (PDF) →
+            </a>
           </p>
         </div>
       </section>
 
       <section className="container-page mt-10">
-        <div className="scroll-hint rounded-2xl border border-line bg-card shadow-sm"><div className="overflow-x-auto rounded-2xl">
+        <div className="scroll-hint rounded-2xl border border-line bg-card shadow-sm"><div tabIndex={0} role="region" aria-label="Tariff bands table (scrolls sideways)" className="overflow-x-auto rounded-2xl">
           <table className="w-full text-xs sm:text-sm">
             <thead>
               <tr className="border-b border-line bg-paper text-left text-xs uppercase tracking-wider text-dim">
@@ -76,9 +79,18 @@ export default function TariffsPage() {
               </tr>
             </thead>
             <tbody>
-              {BANDS.map((b) => (
+              {BANDS.map((b, i) => (
                 <tr key={b.label} className="border-b border-line last:border-0">
-                  <td className="px-2 py-3 font-medium sm:px-4">{b.label}</td>
+                  <td className="px-2 py-3 font-medium sm:px-4">
+                    <span className="flex items-center gap-2">
+                      <span aria-hidden className="inline-block h-3 w-3 shrink-0 rounded-sm" style={{ background: bandColor(i) }} />
+                      {b.label}
+                    </span>
+                    {/* Price bar: band rate as a share of the top rate — makes the 3.2× ladder visible. */}
+                    <span aria-hidden className="mt-1.5 ml-5 block h-1 max-w-40 rounded-full bg-paper">
+                      <span className="block h-1 rounded-full" style={{ width: `${Math.round((b.inclLevyZwg / BANDS[BANDS.length - 1].inclLevyZwg) * 100)}%`, background: bandColor(i) }} />
+                    </span>
+                  </td>
                   <td className="whitespace-nowrap px-2 py-3 text-right font-mono sm:px-4">{fmt(b.baseZwg, 4)}</td>
                   <td className="whitespace-nowrap px-2 py-3 text-right font-mono sm:px-4 font-semibold">{fmt(b.inclLevyZwg, 4)}</td>
                   <td className="whitespace-nowrap px-2 py-3 text-right font-mono sm:px-4">${fmt(b.usdApprox)}</td>
@@ -121,7 +133,7 @@ export default function TariffsPage() {
         </div>
         <div>
           <h2 className="font-display text-2xl font-bold">What it costs, cumulatively</h2>
-          <div className="scroll-hint mt-4 rounded-2xl border border-line bg-card shadow-sm"><div className="overflow-x-auto rounded-2xl">
+          <div className="scroll-hint mt-4 rounded-2xl border border-line bg-card shadow-sm"><div tabIndex={0} role="region" aria-label="Cumulative cost table (scrolls sideways)" className="overflow-x-auto rounded-2xl">
             <table className="w-full text-xs sm:text-sm">
               <thead>
                 <tr className="border-b border-line bg-paper text-left text-xs uppercase tracking-wider text-dim">

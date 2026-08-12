@@ -210,27 +210,18 @@ export default function BuyFlow() {
     }
   }
 
-  // Never render a payment form the backend will refuse: /order and /initiate
-  // both reject unless the function is in a live mode.
-  if (!health.loading && !purchasable) {
-    return (
-      <div className="rounded-xl border border-line bg-card p-8 text-center">
-        <p className="font-display text-xl font-bold">Token purchases are almost here<BoltIcon className="ml-1.5 inline-block h-4 w-4 -translate-y-px align-middle text-volt-deep" /></p>
-        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-dim">
-          We&apos;re finishing the plumbing with our payment partners. Very soon you&apos;ll buy
-          ZESA tokens right here with EcoCash, Zimswitch or your bank — in USD or ZWG.
-        </p>
-        <p className="mt-4 text-sm">
-          Meanwhile, try the{" "}
-          <Link href="/" className="font-medium text-volt-deep underline">free calculator</Link>{" "}
-          to plan your purchase.
-        </p>
-      </div>
-    );
-  }
-
+  // coming_soon is NOT a dead end: meter verification is live, and the same
+  // form doubles as the launch-list funnel — startPayment posts /waitlist and
+  // shows the waitlisted state whenever the mode isn't a live one. The home
+  // page promises "check your meter right now"; this keeps that promise.
   return (
     <div className="rounded-xl border border-line bg-card shadow-sm">
+      {!health.loading && !purchasable && (
+        <p className="rounded-t-xl border-b border-volt/40 bg-volt/10 px-4 py-2.5 text-center text-xs font-medium text-volt-deep">
+          <BoltIcon className="mr-1 inline-block h-3.5 w-3.5 -translate-y-px align-middle" />
+          Payments open very soon — verify your meter now and join the launch list; we&apos;ll text you the moment tokens go on sale.
+        </p>
+      )}
       {/* progress */}
       <div className="flex border-b border-line text-xs font-medium uppercase tracking-wider">
         {(["meter", "amount"] as const).map((s, i) => {
@@ -266,7 +257,7 @@ export default function BuyFlow() {
               onChange={(e) => setMeter(e.target.value.replace(/\D/g, ""))}
               placeholder="e.g. 04123456789"
               maxLength={13}
-              className="mt-2 w-full rounded-lg border border-line bg-paper px-4 py-3 font-mono text-lg tracking-wide outline-none transition focus:border-volt focus:ring-2 focus:ring-volt/30"
+              className="focus-quiet mt-2 w-full rounded-lg border border-line bg-paper px-4 py-3 font-mono text-lg tracking-wide outline-none transition focus:border-volt-deep focus:shadow-[0_0_0_4px_rgba(245,184,0,0.18)]"
               required
             />
             <p className="mt-2 text-xs text-dim">
@@ -352,10 +343,10 @@ export default function BuyFlow() {
                 placeholder={currency === "USD" ? "Custom amount, e.g. 15" : "Custom amount, e.g. 350"}
                 aria-invalid={amtError ? true : undefined}
                 aria-describedby={amtError ? "amount-error" : undefined}
-                className={`mt-2 w-full rounded-lg border bg-paper px-4 py-3 font-mono text-lg outline-none transition focus:ring-2 ${
+                className={`focus-quiet mt-2 w-full rounded-lg border bg-paper px-4 py-3 font-mono text-lg outline-none transition ${
                   amtError
-                    ? "border-danger-border focus:border-danger focus:ring-danger/20"
-                    : "border-line focus:border-volt focus:ring-volt/30"
+                    ? "border-danger-border focus:border-danger focus:shadow-[0_0_0_4px_rgba(180,35,24,0.15)]"
+                    : "border-line focus:border-volt-deep focus:shadow-[0_0_0_4px_rgba(245,184,0,0.18)]"
                 }`}
                 required
               />
@@ -381,10 +372,10 @@ export default function BuyFlow() {
                   maxLength={13}
                   aria-invalid={phoneInvalid ? true : undefined}
                   aria-describedby="phone-help"
-                  className={`mt-2 w-full rounded-lg border bg-paper px-4 py-2.5 font-mono outline-none transition focus:ring-2 ${
+                  className={`focus-quiet mt-2 w-full rounded-lg border bg-paper px-4 py-2.5 font-mono outline-none transition ${
                     phoneInvalid
-                      ? "border-danger-border focus:border-danger focus:ring-danger/20"
-                      : "border-line focus:border-volt focus:ring-volt/30"
+                      ? "border-danger-border focus:border-danger focus:shadow-[0_0_0_4px_rgba(180,35,24,0.15)]"
+                      : "border-line focus:border-volt-deep focus:shadow-[0_0_0_4px_rgba(245,184,0,0.18)]"
                   }`}
                   required
                 />
@@ -408,7 +399,7 @@ export default function BuyFlow() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="mt-2 w-full rounded-lg border border-line bg-paper px-4 py-2.5 outline-none transition focus:border-volt focus:ring-2 focus:ring-volt/30"
+                  className="focus-quiet mt-2 w-full rounded-lg border border-line bg-paper px-4 py-2.5 outline-none transition focus:border-volt-deep focus:shadow-[0_0_0_4px_rgba(245,184,0,0.18)]"
                 />
               </div>
             </div>
@@ -445,9 +436,16 @@ export default function BuyFlow() {
                 ? "Preparing secure checkout…"
                 : PAYMENT_MODE === "semi_auto"
                   ? `Pay ${currency === "USD" ? "$" : "ZWG "}${amount || "—"} with EcoCash`
-                  : `Pay ${currency === "USD" ? "$" : "ZWG "}${amount || "—"} with Paynow`}
+                  : purchasable
+                    ? `Pay ${currency === "USD" ? "$" : "ZWG "}${amount || "—"} with Paynow`
+                    : "Join the launch list"}
             </button>
-            {PAYMENT_MODE === "semi_auto" ? (
+            {!purchasable && PAYMENT_MODE !== "semi_auto" ? (
+              <p className="mt-3 text-center text-xs text-dim">
+                No payment is taken today — we save your meter and amount, and text you the moment
+                token purchases open so you can finish in one tap.
+              </p>
+            ) : PAYMENT_MODE === "semi_auto" ? (
               <p className="mt-3 text-center text-xs text-dim">
                 Pay by EcoCash from your phone — we&apos;ll show you exactly how on the next step,
                 and your token is generated automatically once your payment lands.
