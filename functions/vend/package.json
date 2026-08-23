@@ -4,6 +4,7 @@
   "type": "module",
   "main": "src/main.js",
   "dependencies": {
-    "node-appwrite": "^26.0.0"
+    "node-appwrite": "^26.0.0",
+    "undici": "^6.28.0"
   }
 }
