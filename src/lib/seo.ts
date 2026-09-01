@@ -80,3 +80,22 @@ export function tariffDataset(opts: {
 export function jsonLdProps(...blocks: unknown[]) {
   return { __html: JSON.stringify(blocks.length === 1 ? blocks[0] : blocks) };
 }
+
+/** One page's full metadata, so title/description are declared exactly once.
+ *
+ * The root layout sets a single openGraph/twitter title for the whole site,
+ * and Next.js does NOT fold a page's own `title`/`description` into it — so
+ * every shared link previewed as the same generic "VoltZW — ZESA electricity,
+ * made simple" card regardless of which page was sent. Most sharing here is
+ * person-to-person on WhatsApp ("your token isn't lost, read this"), where the
+ * preview card IS the pitch, so a generic card wastes the share.
+ */
+export function pageMeta(title: string, description: string, path: string) {
+  return {
+    title,
+    description,
+    alternates: { canonical: path },
+    openGraph: { type: "website" as const, url: `${SITE}${path}`, siteName: "VoltZW", title, description },
+    twitter: { card: "summary_large_image" as const, title, description, images: ["/opengraph-image.png"] },
+  };
+}

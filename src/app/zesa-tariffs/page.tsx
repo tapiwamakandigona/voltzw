@@ -4,7 +4,7 @@ import { TARIFFS, BANDS, bandColor, costForUnits, fmt, zwgToUsd } from "@/lib/ta
 import { UNIT_SLUGS } from "@/lib/amounts";
 import { BulbIcon, WrenchIcon } from "@/components/icons";
 import { FIRST_DATE, HISTORY, monthKeys, monthLabel, monthRange } from "@/lib/history";
-import { breadcrumb, jsonLdProps, tariffDataset } from "@/lib/seo";
+import { breadcrumb, jsonLdProps, pageMeta, tariffDataset } from "@/lib/seo";
 
 /** The month this build is describing. People search "zesa tariffs august 2026",
  *  so the month has to be in the title — a page titled only "Today" ranks for
@@ -13,11 +13,11 @@ import { breadcrumb, jsonLdProps, tariffDataset } from "@/lib/seo";
 const CURRENT_MONTH = TARIFFS.lastVerified.slice(0, 7);
 const CURRENT_MONTH_LABEL = monthLabel(CURRENT_MONTH);
 
-export const metadata: Metadata = {
-  title: `ZESA Tariffs ${CURRENT_MONTH_LABEL} in ZiG & USD — Full ZETDC Table, ZWG ${fmt(BANDS[0].inclLevyZwg, 2)}/unit`,
-  description: `Current ZERA-approved ZESA (ZETDC) tariffs for Zimbabwe in ${CURRENT_MONTH_LABEL}, in ZiG (ZWG) and USD: the first 50 units cost ZWG ${fmt(BANDS[0].inclLevyZwg, 4)} incl. the 6% REA levy. Full table of all six stepped bands, verified daily — free PDF download.`,
-  alternates: { canonical: "/zesa-tariffs/" },
-};
+export const metadata: Metadata = pageMeta(
+  `ZESA Tariffs ${CURRENT_MONTH_LABEL} in ZiG & USD — Full ZETDC Table, ZWG ${fmt(BANDS[0].inclLevyZwg, 2)}/unit`,
+  `Current ZERA-approved ZESA (ZETDC) tariffs for Zimbabwe in ${CURRENT_MONTH_LABEL}, in ZiG (ZWG) and USD: the first 50 units cost ZWG ${fmt(BANDS[0].inclLevyZwg, 4)} incl. the 6% REA levy. Full table of all six stepped bands, verified daily — free PDF download.`,
+  "/zesa-tariffs/",
+);
 
 export default function TariffsPage() {
   // Each row deep-links to the page that answers "how much is N units of

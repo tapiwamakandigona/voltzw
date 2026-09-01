@@ -1,12 +1,12 @@
+import { pageMeta } from "@/lib/seo";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = {
-  title: "ZESA Token Not Received? Retrieve or View It — EcoCash, ZB, CBZ & All Banks",
-  description:
-    "Your token is not lost — it is stored where you bought it. Retrieve or view a ZESA token in minutes: EcoCash (*151#), ZB, CBZ, Steward and other bank apps, the ZETDC self-service portal, WhatsApp and in-person options.",
-  alternates: { canonical: "/retrieve-zesa-token/" },
-};
+export const metadata: Metadata = pageMeta(
+  "ZESA Token Not Received? Retrieve or View It — EcoCash, ZB, CBZ & All Banks",
+  "Your token is not lost — it is stored where you bought it. Retrieve or view a ZESA token in minutes: EcoCash (*151#), ZB, CBZ, Steward and other bank apps, the ZETDC self-service portal, WhatsApp and in-person options.",
+  "/retrieve-zesa-token/",
+);
 
 /** The exact questions people type into Google ("zesa token not received",
  *  "how to retrieve zesa token on zb bank") — answered visibly on the page
