@@ -40,13 +40,24 @@ export function changeCount(): number {
   return n;
 }
 
-/** Every month from the first record to the latest one, newest first, with no
+/** Every month from the first record to the current one, newest first, with no
  *  holes — a month in which ZESA published nothing is still a month people
  *  search for ("zesa tariffs june 2026"), and skipping it turned
- *  /zesa-tariffs/2026-06/ into a 404. Use `rateInForce` for those months. */
-export function monthKeys(): string[] {
+ *  /zesa-tariffs/2026-06/ into a 404. Use `rateInForce` for those months.
+ *
+ *  SPEC CHANGE (2026-09-01): the range used to END at the newest published
+ *  schedule, which reopened the same 404 at the other end of the record. On
+ *  2026-09-01 the newest schedule was dated 2026-08-24, so /zesa-tariffs/2026-09/
+ *  404'd on the very first day people start searching "zesa tariffs september
+ *  2026" — the query that, as "august 2026", ranks ~2.7 and converts at ~10% CTR.
+ *  The current month always has a price (the schedule still in force) and always
+ *  has searchers, so it always gets a page. `nowKey` is injectable for tests. */
+export function monthKeys(nowKey: string = new Date().toISOString().slice(0, 7)): string[] {
   if (!HISTORY.length) return [];
-  const [first, last] = [FIRST_DATE.slice(0, 7), LATEST.d.slice(0, 7)];
+  const first = FIRST_DATE.slice(0, 7);
+  const latest = LATEST.d.slice(0, 7);
+  // Never go backwards: a stale/odd clock must not truncate the record.
+  const last = nowKey > latest ? nowKey : latest;
   const keys: string[] = [];
   let [y, m] = first.split("-").map(Number);
   for (let guard = 0; guard < 1200; guard++) {

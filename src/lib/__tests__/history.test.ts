@@ -71,7 +71,11 @@ describe("month grouping", () => {
     const keys = monthKeys();
     expect(keys.length).toBeGreaterThan(0);
     expect([...keys].sort().reverse()).toEqual(keys);
-    expect(keys[0]).toBe(LATEST.d.slice(0, 7));
+    // SPEC CHANGE (2026-09-01): the newest key is the CURRENT month, which is
+    // the latest published month only while ZESA has published this month.
+    const nowKey = new Date().toISOString().slice(0, 7);
+    const latestKey = LATEST.d.slice(0, 7);
+    expect(keys[0]).toBe(nowKey > latestKey ? nowKey : latestKey);
     expect(keys[keys.length - 1]).toBe(FIRST_DATE.slice(0, 7));
     expect(new Set(keys).size).toBe(keys.length);
     // consecutive: stepping back one month from each key yields the next one
@@ -85,6 +89,28 @@ describe("month grouping", () => {
     for (const k of keys) {
       expect(snapshotsForMonth(k).length > 0 || rateInForce(k) !== null).toBe(true);
     }
+  });
+
+  // REGRESSION (2026-09-01): monthKeys() used to stop at the newest published
+  // schedule. On 2026-09-01 the newest was 2026-08-24, so the September page was
+  // never generated and /zesa-tariffs/2026-09/ returned 404 on the first day of
+  // the month people search for it. The current month must always be listed.
+  it("always includes the current calendar month, even with nothing published in it", () => {
+    // A month strictly after every snapshot: nothing published, still must exist.
+    const future = "2027-03";
+    const keys = monthKeys(future);
+    expect(keys[0]).toBe(future);
+    expect(snapshotsForMonth(future)).toHaveLength(0);
+    expect(rateInForce(future)).not.toBeNull();
+    expect(monthRange(future)).not.toBeNull();
+    // and it is reachable with no holes back to the record start
+    expect(new Set(keys).size).toBe(keys.length);
+    expect(keys[keys.length - 1]).toBe(FIRST_DATE.slice(0, 7));
+  });
+
+  it("never truncates the record if the clock is behind the newest schedule", () => {
+    const stale = "2020-01";
+    expect(monthKeys(stale)[0]).toBe(LATEST.d.slice(0, 7));
   });
 
   it("monthsWithSchedules lists only months that published, newest first", () => {
@@ -124,7 +150,10 @@ describe("month grouping", () => {
   });
 
   it("monthRange brackets the entry band, and is null for unknown months", () => {
-    const key = monthKeys()[0];
+    // Must be a month that actually published: monthKeys()[0] is now the current
+    // calendar month, which may legitimately have no schedules of its own
+    // (then monthRange reports the carried-over flat rate — covered above).
+    const key = monthsWithSchedules()[0];
     const range = monthRange(key)!;
     const vals = snapshotsForMonth(key).map((s) => s.incl[0]);
     expect(range.min).toBe(Math.min(...vals));
