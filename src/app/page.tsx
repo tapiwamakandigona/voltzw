@@ -52,7 +52,7 @@ const faqs = [
   },
   {
     q: "Can I buy ZESA tokens on VoltZW?",
-    a: "Yes — buy tokens right here with EcoCash and other Paynow methods, in USD or ZWG. Verify your meter, pay, and your 20-digit token appears on screen and is sent by SMS. Your purchase history stays attached to your meter number, so a lost SMS never means a lost token.",
+    a: "The buy page shows whether token purchases are currently open, the supported payment methods and any service fee before you pay. If payments are not open, you can check your meter and join the launch list. The calculator, tariff tables and token-retrieval guides remain free.",
   },
 ];
 
@@ -119,9 +119,9 @@ export default function Home() {
           },
           {
             href: "/buy/",
-            title: "Buy tokens online",
-            desc: "Verify any ZETDC meter, then pay with EcoCash in USD or ZWG — token on screen and by SMS, no account needed.",
-            cta: "Buy now",
+            title: "Check your meter",
+            desc: "Check your ZETDC prepaid meter and current purchase availability. If payments are not open, join the launch list.",
+            cta: "Check availability",
           },
         ].map((c) => (
           <Link key={c.title} href={c.href} className="group rounded-2xl border border-line bg-card p-6 shadow-sm transition hover:border-volt-deep">

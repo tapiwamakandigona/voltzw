@@ -223,7 +223,7 @@ export default function BuyFlow() {
       {!health.loading && !purchasable && (
         <p className="rounded-t-xl border-b border-volt/40 bg-volt/10 px-4 py-2.5 text-center text-xs font-medium text-volt-deep">
           <BoltIcon className="mr-1 inline-block h-3.5 w-3.5 -translate-y-px align-middle" />
-          Payments open very soon — verify your meter now and join the launch list; we&apos;ll text you the moment tokens go on sale.
+          Payments are not open right now — check your meter and request a launch update. No launch date is promised.
         </p>
       )}
       {/* progress */}
@@ -480,18 +480,18 @@ export default function BuyFlow() {
               <BoltIcon className="h-6 w-6" />
             </div>
             <span className="mt-4 inline-block rounded-full border border-line bg-paper px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-volt-deep">
-              Coming soon
+              Launch updates
             </span>
             <p className="mt-3 font-display text-xl font-bold">
-              Almost there — token purchases launch very soon
+              Token purchases are not open yet
             </p>
             <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-dim">
               Your meter checks out{info?.customerName ? <> — registered to <span className="font-medium text-ink">{info.customerName}</span></> : null}.
-              Meter verification is already live; we&apos;re just finishing the final payment plumbing.
+              You have not placed a paid order. No launch date is promised.
             </p>
             <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed">
               We&apos;ll {email.trim() ? "SMS and email" : "SMS"} you at{" "}
-              <span className="font-mono font-medium">{phone}</span> the moment it launches, so you can be first in line.
+              <span className="font-mono font-medium">{phone}</span> with a launch update.
             </p>
             <p className="mt-5 text-xs text-dim">
               Meanwhile, plan your purchase with the{" "}

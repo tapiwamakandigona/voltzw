@@ -78,8 +78,9 @@ function Footer() {
             <span className="bg-volt px-1.5 py-0.5 mr-0.5 text-ink">Volt</span>ZW
           </p>
           <p className="mt-3 text-sm leading-relaxed">
-            The fastest, smartest way to manage prepaid electricity in Zimbabwe.
-            Buy tokens with EcoCash, Zimswitch or bank in USD or ZWG — calculator, tariffs and retrieval help are free, forever.
+            Understand your prepaid electricity in Zimbabwe.
+            The calculator, tariff tables and token-retrieval guides are free.
+            Check the buy page for current purchase availability and payment methods.
           </p>
         </div>
         <div className="text-sm">
