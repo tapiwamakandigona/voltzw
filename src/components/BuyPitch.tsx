@@ -13,8 +13,8 @@ export function BuyPitch() {
   if (health.loading) {
     return (
       <p className="mt-3 text-dim">
-        Verify your meter, pay, and get your token on screen and by SMS. No queues, no airtime
-        hassle.
+        Check your meter and current payment availability below. The calculator and
+        tariff guides are free.
       </p>
     );
   }
@@ -22,9 +22,9 @@ export function BuyPitch() {
   if (!live) {
     return (
       <p className="mt-3 text-dim">
-        Meter verification is live now. <strong className="text-ink">Payments are not open yet</strong>{" "}
-        — check your meter below and join the launch list, and we&apos;ll text you the moment token
-        purchases go live. Meanwhile the{" "}
+        <strong className="text-ink">Payments are not open on this page right now.</strong>{" "}
+        You can check your meter below and request a launch update. No launch date is promised.
+        If a service is unavailable, try again later. Meanwhile the{" "}
         <Link href="/" className="font-medium text-volt-deep underline">
           calculator
         </Link>{" "}
@@ -59,7 +59,7 @@ export function BuyPitch() {
 export function PayStep() {
   const health = useHealth();
   if (!canBuy(health)) {
-    return <p className="mt-1 text-dim">Payments open soon — join the launch list and we&apos;ll text you.</p>;
+    return <p className="mt-1 text-dim">Check current availability below. When payments are closed, you can request a launch update instead.</p>;
   }
   return (
     <p className="mt-1 text-dim">

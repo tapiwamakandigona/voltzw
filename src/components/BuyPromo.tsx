@@ -20,26 +20,24 @@ export default function BuyPromo() {
             </>
           ) : (
             <>
-              Buy ZESA tokens on VoltZW — <span className="text-volt">opening soon</span>
+              ZESA token purchases — <span className="text-volt">check availability</span>
             </>
           )}
         </h2>
         <p className="mt-3 max-w-2xl leading-relaxed text-white/70">
           {live ? (
             <>
-              Pay with EcoCash and other Paynow methods, in{" "}
-              <strong className="text-white">USD or ZWG</strong>. We verify your meter first, then
+              See the available payment methods, currencies and service fee on the buy page.
+              We verify your meter first. After a successful purchase,
               your 20-digit token appears on screen and is sent by SMS. Every purchase stays
               attached to your meter number — a lost SMS never means a lost token. Perfect for
               topping up a family meter from the diaspora.
             </>
           ) : (
             <>
-              Meter verification is already live — you can check the registered name on any ZETDC
-              prepaid meter right now. Payments are in the final stage with our partners: join the
-              launch list and we&apos;ll text you the day tokens go on sale, in{" "}
-              <strong className="text-white">USD or ZWG</strong>, with the token on screen and by
-              SMS.
+              Use the buy page to check your ZETDC prepaid meter and current payment availability.
+              If payments are closed, you can request a launch update. No launch date is promised.
+              The calculator and tariff guides remain free.
             </>
           )}
         </p>

@@ -7,9 +7,9 @@ import { TARIFFS, MONTHLY_QUOTA, fmt } from "@/lib/tariff";
 import { breadcrumb, jsonLdProps } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Buy ZESA Tokens Online in Zimbabwe — EcoCash, Zimswitch, USD & ZWG",
+  title: "ZESA Token Purchases — Check Your Meter & Payment Availability",
   description:
-    "Buy prepaid ZESA electricity tokens online in Zimbabwe. Verify your ZETDC meter, pay with EcoCash, Zimswitch, InnBucks or bank in USD or ZWG, and get the token on screen and by SMS.",
+    "Check your ZETDC prepaid meter and current purchase availability. See supported payment methods and service fees before paying, or request a launch update while payments are closed.",
   alternates: { canonical: "/buy/" },
 };
 
@@ -21,12 +21,16 @@ export const metadata: Metadata = {
  *  of whether payments are open yet. */
 const faqs = [
   {
+    q: "Are token purchases currently open?",
+    a: "The form above checks the current payment configuration. If payments are closed or unavailable, do not send money: you can request a launch update instead. No launch date is promised. The calculator, tariff tables and retrieval guides remain free.",
+  },
+  {
     q: "What do I need to buy a ZESA token online?",
     a: "Your 11-digit ZETDC prepaid meter number and a phone number for the token SMS. The meter number is printed on the meter itself and on any previous token receipt — it is not your ZETDC account number. We check the registered name on the meter before any payment so a mistyped digit cannot send your token to a stranger.",
   },
   {
     q: "How is the token delivered?",
-    a: "The 20-digit token appears on screen as soon as the purchase completes, and is sent by SMS to the number you enter. Because the purchase stays attached to your meter number, a lost SMS never means a lost token — the same token can be shown again.",
+    a: "When purchases are open and a purchase succeeds, the 20-digit token appears on screen and is sent by SMS to the number you enter. Delivery depends on payment confirmation and the vending service; do not pay again while an order is pending. Purchase history lets you retrieve the same token if an SMS is lost.",
   },
   {
     q: "Does buying online cost more than buying at a shop?",
@@ -38,7 +42,7 @@ const faqs = [
   },
   {
     q: "Can I buy a token for someone else's meter?",
-    a: "Yes. Enter their meter number, confirm the registered name we show back to you, and put your own phone number in for the SMS if you want the token yourself. Prepaid tokens are tied to the meter, not to the buyer.",
+    a: "When purchases are open, yes. Enter their meter number, confirm the registered name we show back to you, and put your own phone number in for the SMS if you want the token yourself. Prepaid tokens are tied to the meter, not to the buyer.",
   },
 ];
 
@@ -83,7 +87,7 @@ export default function BuyPage() {
           </div>
           <div className="rounded-lg border border-line bg-card p-4">
             <p className="font-display font-semibold">3. Get your token</p>
-            <p className="mt-1 text-dim">Delivered instantly on screen and by SMS to your phone.</p>
+            <p className="mt-1 text-dim">After a successful purchase, shown on screen and sent by SMS. Check the order status if delivery is pending.</p>
           </div>
         </div>
       </div>
