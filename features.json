@@ -1,0 +1,21 @@
+{
+  "$comment": "Machine-readable definition of done. Only flip passes to true with evidence (a command that ran, an artifact that exists). Workers never edit verify commands or acceptance criteria — that's a spec change, report it.",
+  "features": [
+    {
+      "id": "F1",
+      "title": "Patched root and SSR dependency trees with unchanged behavior checks",
+      "acceptance": "Current root/SSR advisory findings resolved without suppressions; exact lockfiles installed; original lint, full tests, static build, wrapper tests and exact-bundle smoke pass; original tests/workflows/application source preserved and output inspected.",
+      "verify": "npm ci && npm run lint && npm test && npm run build; npm --prefix ssr ci; original ssr/test/server.test.mjs against built export; npm audit --json in root/ssr; source/check hashes and managed diff",
+      "passes": false,
+      "evidence": "PARTIAL, 2026-09-18: SSR Express4.22.3/body-parser1.20.8/qs6.16.0/esbuild0.25.12; npm audit0; original137 unit tests,11 wrapper tests, lint/static build and exact-bundle smoke pass. Root still7 package findings after resolver attempt plus one retry failed. See docs/dependency-maintenance-2026-09-18.json. Full acceptance remains false."
+    },
+    {
+      "id": "F2",
+      "title": "Verified website maintenance delivery",
+      "acceptance": "Exact tested source merged via checked PR; existing deployment succeeds and correct live route/header/tariff output independently read back; no false claim that local npm audit alone closes default-branch Dependabot.",
+      "verify": "Primary PR/ref/CI/deployment readback, fresh Dependabot API and public HTTP/headers/tariff data",
+      "passes": false,
+      "evidence": ""
+    }
+  ]
+}

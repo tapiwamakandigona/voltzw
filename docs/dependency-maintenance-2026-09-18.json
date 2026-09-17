@@ -1,0 +1,37 @@
+{
+  "verified": true,
+  "changed_original_paths": [
+    "ssr/package-lock.json",
+    "ssr/package.json"
+  ],
+  "original_paths_preserved": 90,
+  "versions": {
+    "express": "4.22.3",
+    "body-parser": "1.20.8",
+    "qs": "6.16.0",
+    "esbuild": "0.25.12"
+  },
+  "ssr_npm_findings": 0,
+  "root_remediation_complete": false,
+  "root_npm_findings": 7,
+  "vitest_tests_passed": 137,
+  "vitest_files_passed": 13,
+  "wrapper_tests_passed": 11,
+  "lint_exit": 0,
+  "build_exit": 0,
+  "static_routes": 48,
+  "csp_stamped_pages": 39,
+  "exact_bundle_smoke_passed": true,
+  "date": "2026-09-18",
+  "base_commit": "814618e1ca408da27bc2a8b7d0e7ba8e62540c7b",
+  "exact_bundle": {
+    "home": 200,
+    "x_frame_options": "DENY",
+    "tariff_api": 200,
+    "unknown_route": 404,
+    "www_redirect": 301,
+    "redirect_location": "https://zesa.tapiwa.me/buy/?units=50",
+    "export_payload_byte_match": true,
+    "server_sha256": "c2e90f0e9f5151cdea95a586b734af459e12eeae8270c8eddf4995b89a97677d"
+  }
+}
