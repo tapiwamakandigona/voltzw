@@ -1,0 +1,89 @@
+{
+  "classification": "VERIFIED",
+  "date": "2026-09-18",
+  "baseline": "d1db36fb1572bda22dd01ec64da3adf4ae13f1ba",
+  "resolver": "npm11.19.1",
+  "acceptance_installer": "npm10.9.8",
+  "node": "22.23.2",
+  "versions": {
+    "next": "16.3.5",
+    "eslint-config-next": "16.3.5",
+    "sharp": "0.35.4",
+    "vitest": "4.1.11",
+    "@vitest/mocker": "4.1.11",
+    "js-yaml": "4.3.2",
+    "browserslist": "4.29.0",
+    "baseline-browser-mapping": "2.11.25"
+  },
+  "audits": {
+    "root": {
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "dependencies": {
+        "prod": 20,
+        "dev": 465,
+        "optional": 118,
+        "peer": 0,
+        "peerOptional": 0,
+        "total": 519
+      }
+    },
+    "ssr": {
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "dependencies": {
+        "prod": 69,
+        "dev": 27,
+        "optional": 26,
+        "peer": 0,
+        "peerOptional": 0,
+        "total": 95
+      }
+    },
+    "vend": {
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "dependencies": {
+        "prod": 5,
+        "dev": 0,
+        "optional": 0,
+        "peer": 0,
+        "peerOptional": 0,
+        "total": 4
+      }
+    }
+  },
+  "changed_original_paths": [
+    "package-lock.json",
+    "package.json"
+  ],
+  "original_paths_preserved": 94,
+  "original_tests_and_workflows_unchanged": true,
+  "application_and_tariffs_unchanged": true,
+  "lint_exit": 0,
+  "tests_passed": 137,
+  "test_files_passed": 13,
+  "wrapper_tests_passed": 11,
+  "static_build_exit": 0,
+  "exact_bundle_smoke": true,
+  "deployment_complete": false,
+  "public_www_dns_verified": false
+}
