@@ -50,3 +50,21 @@ Only2 of92 original tracked paths change (SSR manifest and lock).
 All original tests, workflows, app source, tariffs, root manifest/lock and
 tracked OG image preserved. Lock's stale portfolio-ssr name normalizes to
 the existing zesa-ssr package name. Partial PR next; F1 is not complete.
+
+
+## 2026-09-18 — renewed root maintenance, VERIFIED locally
+- Prior blocked root work was not shipped. Renewed owner mandate authorized
+  a bounded resolution from mergedSSR baseline d1db36f.
+- Clean npm10.9.8 failed: `Cannot read properties of null (reading 'edgesOut')`.
+  One retry with verified-compatible npm11.19.1 generated the lock; unforced
+  audit fix updated compatible transitive dependencies. No guard/suppression,
+  legacy-peer, forced major, tests or workflow change.
+- Next/eslint-config16.3.5, sharp0.35.4, Vitest/mocker4.1.11,
+  js-yaml4.3.2, browserslist4.29.0, baseline-browser-mapping2.11.25.
+- Original npm10 ci succeeds without lock mutation; lint,137tests/13files,
+ 48-route build/39-pageCSP,11wrapper and exactCJS artifact smoke pass.
+  Root/SSR/vend audits0. Original application/tariff/test/workflow bytes intact.
+- Existing bundle import.meta fallback warning and future Vite config-loader
+  warning are not suppressed. Build-generated OG restored to tracked source.
+- F1 verified true. F2 remains false until exact checked revision deploys and
+  fresh default-branch alerts/live routes are read. Local www301 is not DNS.

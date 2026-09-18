@@ -42,9 +42,12 @@ versions, before/after advisory evidence and delivered revision.
 
 ## Current phase
 
-Partial maintenance — root resolver attempt plus one retry failed; root changes
-are deferred for a separately authorized bounded run. Independently patch and
-verify SSR dependencies. Keep full-remediation acceptance false while root
-advisories remain. Do not disable npm remote-fetch guards.
+Verified root maintenance candidate — renewed owner-authorized run used
+npm11.19.1 after npm10 Arborist failed on clean resolution. No security
+configuration was relaxed. Original npm10 ci, lint,137tests, static build,
+11wrapper tests and exact-bundle smoke pass; root/SSR/vend audits0.
+Application/tariffs/tests/workflows and prior SSR patch remain unchanged.
+Await checked PR merge and deployment readback; public www DNS remains
+separate. See docs/root-dependency-maintenance-2026-09-18.json.
 
 Template copied from canonical subagent-toolkit v3.0.1, then adapted.
