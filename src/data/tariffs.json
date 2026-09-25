@@ -1,6 +1,6 @@
 {
-  "effectiveDate": "2026-09-24",
-  "lastVerified": "2026-09-24",
+  "effectiveDate": "2026-09-25",
+  "lastVerified": "2026-09-25",
   "currency": "ZWG",
   "reaLevyPct": 6,
   "bandsNote": "inclLevyZwg values are as published by the source (mixed rounding in the 4th decimal), not recomputed from baseZwg x 1.06 — do not 'fix' them here.",
@@ -15,48 +15,48 @@
       "from": 1,
       "to": 50,
       "label": "First 50 units",
-      "baseZwg": 2.1308,
-      "inclLevyZwg": 2.2586,
+      "baseZwg": 2.1304,
+      "inclLevyZwg": 2.2582,
       "usdApprox": 0.08
     },
     {
       "from": 51,
       "to": 100,
       "label": "51 – 100 units",
-      "baseZwg": 2.3972,
-      "inclLevyZwg": 2.541,
+      "baseZwg": 2.3966,
+      "inclLevyZwg": 2.5404,
       "usdApprox": 0.09
     },
     {
       "from": 101,
       "to": 200,
       "label": "101 – 200 units",
-      "baseZwg": 4.2615,
-      "inclLevyZwg": 4.5172,
+      "baseZwg": 4.2607,
+      "inclLevyZwg": 4.5163,
       "usdApprox": 0.16
     },
     {
       "from": 201,
       "to": 300,
       "label": "201 – 300 units",
-      "baseZwg": 6.1259,
-      "inclLevyZwg": 6.4935,
+      "baseZwg": 6.1247,
+      "inclLevyZwg": 6.4922,
       "usdApprox": 0.23
     },
     {
       "from": 301,
       "to": 400,
       "label": "301 – 400 units",
-      "baseZwg": 6.6587,
-      "inclLevyZwg": 7.0582,
+      "baseZwg": 6.6574,
+      "inclLevyZwg": 7.0568,
       "usdApprox": 0.25
     },
     {
       "from": 401,
       "to": null,
       "label": "Above 400 units",
-      "baseZwg": 6.925,
-      "inclLevyZwg": 7.3405,
+      "baseZwg": 6.9237,
+      "inclLevyZwg": 7.3391,
       "usdApprox": 0.26
     }
   ]
