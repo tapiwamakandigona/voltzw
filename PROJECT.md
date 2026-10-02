@@ -37,6 +37,10 @@ versions, before/after advisory evidence and delivered revision.
   allow-listed) — a deliberate, owner-ratified tradeoff, shipped via PR, not to
   main directly. (2026-10-02)
 
+- /privacy/ must describe exactly what the site collects. Any change to data
+  collection, processors, cookies or ad placement updates /privacy/ in the same
+  PR. (2026-10-02)
+
 ## Constraints
 
 - One executor; plan → act → verify → commit. One retry per failure, then
@@ -48,12 +52,11 @@ versions, before/after advisory evidence and delivered revision.
 
 ## Current phase
 
-Verified root maintenance candidate — renewed owner-authorized run used
-npm11.19.1 after npm10 Arborist failed on clean resolution. No security
-configuration was relaxed. Original npm10 ci, lint,137tests, static build,
-11wrapper tests and exact-bundle smoke pass; root/SSR/vend audits0.
-Application/tariffs/tests/workflows and prior SSR patch remain unchanged.
-Await checked PR merge and deployment readback; public www DNS remains
-separate. See docs/root-dependency-maintenance-2026-09-18.json.
+2026-10-02: monetisation. AdSense code live (PR #20). AdSense for content
+enabled on pub-5182383335652302; site tapiwa.me added + ownership verified;
+review to be requested once the privacy policy (F4) is live. F5 flips only when
+AdSense shows the site as Ready. Earlier dependency-maintenance work (F1/F2) is
+unchanged — F2 still awaits its own delivery readback (record:
+docs/root-dependency-maintenance-2026-09-18.json).
 
 Template copied from canonical subagent-toolkit v3.0.1, then adapted.

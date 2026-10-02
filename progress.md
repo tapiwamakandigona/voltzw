@@ -109,3 +109,27 @@ VERIFIED AdSense integration (branch feat/adsense, this PR):
   build renders `<ins>` on units/tariffs/retrieve and none on home/buy.
 - NOT verified (out of repo scope): ads actually serving. That needs the site
   approved in AdSense and either Auto ads on or real slot ids set (docs/adsense.md).
+
+
+## 2026-10-02 (later) — AdSense registration + privacy policy (owner approved all)
+- PR #20 merged (440e9c9) — owner ratified the CSP tradeoff. CI + Deploy site
+  (static + SSR jobs) green. VERIFIED live: zesa.tapiwa.me/ads.txt 200
+  text/plain with the Google line; adsbygoogle loader on /zesa-tariffs/; CSP
+  frame-src/script-src/img-src/connect-src carry the ad domains.
+- AdSense: the existing pub-5182383335652302 account was AdMob-only (no Sites
+  menu). Ran the AdSense sign-up with that account ("Continue with this
+  account") → AdSense for content enabled. AdSense sites are root domains, so
+  the site is **tapiwa.me** (covers zesa.tapiwa.me). Root ads.txt + ownership
+  meta tag shipped in portfolio PR #45 (merged ee570de, deploy green, live
+  readback OK). Ownership VERIFIED in AdSense ("Your site is verified").
+- Gap found before requesting review: neither site had a privacy policy, which
+  AdSense requires (third-party ad-cookie disclosure). This PR adds /privacy/
+  written from what the code actually does (BuyFlow fields, functions/vend
+  processors Hot Recharge/Paynow/EcoCash on Appwrite, localStorage order ref,
+  consent-first analytics.js, AdSense disclosures + opt-out links), a footer
+  link and a sitemap entry. analytics.js consent copy said "Ads and
+  personalisation are off" — inaccurate once ads run; now "Analytics ad
+  features and personalisation are off" + a link to /privacy/.
+- Evidence (local): eslint clean; npm test 137/137; build 50 routes, stamp-csp
+  41/41; out/privacy/index.html has title, canonical, CSP and the disclosure;
+  home footer links /privacy/; sitemap lists it; no ad unit on /privacy/.

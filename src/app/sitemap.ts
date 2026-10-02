@@ -19,6 +19,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/zesa-tariffs/pdf/`, lastModified, changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/units/`, lastModified, changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/retrieve-zesa-token/`, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${base}/privacy/`, changeFrequency: "yearly", priority: 0.2 },
   ];
 
   const amounts: MetadataRoute.Sitemap = [...AMOUNT_SLUGS, ...UNIT_SLUGS].map((slug) => ({
