@@ -30,14 +30,22 @@
       "title": "Privacy policy with AdSense-required disclosures",
       "acceptance": "/privacy/ states only what the code does (free tools collect nothing; Buy-flow fields and processors from BuyFlow + functions/vend; opt-in analytics per public/analytics.js; AdSense with Google's required third-party-cookie disclosure, Ads Settings + aboutads opt-outs and the partner-sites link); linked from the global footer; in the sitemap; analytics consent copy no longer says 'Ads ... are off'; lint, full tests and static build pass; live page read back.",
       "verify": "npm run lint && npm test && npm run build; grep out/privacy/index.html for title/canonical/CSP/disclosure; out/index.html footer link; out/sitemap.xml entry; curl live https://zesa.tapiwa.me/privacy/",
-      "passes": false,
-      "evidence": ""
+      "passes": true,
+      "evidence": "VERIFIED 2026-10-02: PR #21 merged (dc8106e); CI + Deploy site green. Local: eslint clean, 137/137 tests, build 50 routes / stamp-csp 41/41. Live: https://zesa.tapiwa.me/privacy/ 200, title 'Privacy policy \u00b7 VoltZW', Google third-party-cookie disclosure present; home footer links /privacy/; live analytics.js carries the corrected 'Analytics ad features and personalisation are off' copy. Portfolio twin: tapiwa.me/privacy/ 200 (portfolio PR #46)."
     },
     {
       "id": "F5",
       "title": "AdSense site approved and serving-ready",
       "acceptance": "AdSense for content enabled on pub-5182383335652302; site tapiwa.me (covers zesa.tapiwa.me) added, ownership verified, root ads.txt found, review requested; passes only when the AdSense Sites page shows tapiwa.me as Ready. Approval itself is Google's decision.",
       "verify": "AdSense Sites page status + ads.txt status; curl https://tapiwa.me/ads.txt and https://zesa.tapiwa.me/ads.txt",
+      "passes": false,
+      "evidence": ""
+    },
+    {
+      "id": "F6",
+      "title": "CTR title pass on the four highest-impression pages",
+      "acceptance": "Titles for /, /zesa-tariffs/, /retrieve-zesa-token/ and /units/ rewritten from GSC query data (baseline recorded in progress.md) without changing H1s, descriptions' facts or canonicals; ISO dates in titles replaced by a human date; lint, full tests and static build pass; live titles read back. Outcome (CTR change) is measured later and does not gate passes.",
+      "verify": "npm run lint && npm test && npm run build; grep <title> in out/ for the four pages; curl live pages after deploy",
       "passes": false,
       "evidence": ""
     }

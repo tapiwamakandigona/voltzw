@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AMOUNT_PAGES, UNIT_PAGES } from "@/lib/amounts";
-import { TARIFFS, MONTHLY_QUOTA, RATE, fmt } from "@/lib/tariff";
+import { TARIFFS, TARIFF_DAY_LABEL, MONTHLY_QUOTA, RATE, fmt } from "@/lib/tariff";
 import { daysOfQuotaUse, formatDuration } from "@/lib/appliances";
-import { breadcrumb, jsonLdProps } from "@/lib/seo";
+import { breadcrumb, jsonLdProps, pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: `ZESA Units per Amount — What Your ZiG (ZWG) or USD Buys (${TARIFFS.effectiveDate})`,
-  description: `How many ZESA units (kWh) you get for ZiG (ZWG) 50 to 5,000 and US$1 to US$100, what 50 to 400 units cost, and the effective price per kWh for each — at the ZERA-approved ZETDC tariffs effective ${TARIFFS.effectiveDate}, incl. the 6% REA levy. Updated daily.`,
-  alternates: { canonical: "/units/" },
-};
+// 0.9% CTR at position 7.5 on "units per amount" phrasing nobody searches;
+// people ask "how many zesa units" / "how much is N units". pageMeta also
+// gives the hub its own share card instead of the site-wide one.
+export const metadata: Metadata = pageMeta(
+  `How Many ZESA Units Do I Get? ZiG & USD Amounts to kWh (${TARIFF_DAY_LABEL})`,
+  `How many ZESA units (kWh) you get for ZiG (ZWG) 50 to 5,000 and US$1 to US$100, what 50 to 400 units cost, and the effective price per kWh for each — at the ZERA-approved ZETDC tariffs effective ${TARIFFS.effectiveDate}, incl. the 6% REA levy. Updated daily.`,
+  "/units/",
+);
 
 const faqs = [
   {

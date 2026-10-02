@@ -133,3 +133,39 @@ VERIFIED AdSense integration (branch feat/adsense, this PR):
 - Evidence (local): eslint clean; npm test 137/137; build 50 routes, stamp-csp
   41/41; out/privacy/index.html has title, canonical, CSP and the disclosure;
   home footer links /privacy/; sitemap lists it; no ad unit on /privacy/.
+
+- F4 VERIFIED live (PR #21 dc8106e, deploy green): /privacy/ 200 with the
+  disclosure; footer link; corrected analytics.js copy served. Portfolio twin
+  /privacy/ live via portfolio PR #46. AdSense review REQUESTED for tapiwa.me
+  (SubmitSite RPC 200; Sites page: "Getting ready"; ads.txt status still "Not
+  found" until Google re-crawls the now-live root file). Optional EEA consent
+  (Google CMP) step left unselected on purpose — would need CSP allow-listing of
+  fundingchoicesmessages.google.com and a second banner; owner decision.
+
+## 2026-10-02 — CTR title pass (F6), data-driven
+GSC baseline, zesa.tapiwa.me only, last 3 months to 2026-09-29 (page filter
+"+zesa.tapiwa.me"): 2.12k clicks, 84.4k impressions, CTR 2.5%, avg pos 7.
+Pages (clicks / impr / CTR / pos):
+- /                     631 / 25,415 / 2.5% / 6.6
+- /zesa-tariffs/        632 / 25,273 / 2.5% / 5.9
+- /retrieve-zesa-token/ 530 / 16,690 / 3.2% / 8.3
+- /units/                35 /  3,711 / 0.9% / 7.5
+Top queries: zesa calculator 146/3,991/3.7%/9.0 · zesa view token
+60/2,506/2.4%/9.4 · zesa token calculator 47/660/7.1%/6.4 · view zesa token
+free 42/465/9%/7.4 · zesa tariffs in zig 2026 41/2,078/2.0%/6.0 · zesa tariffs
+29/1,533/1.9%/8.6 · zesa tariffs in usd 28/1,178/2.4%/6.0 · zesa tariffs in zig
+today 17/823/2.1%/6.2 · how to retrieve zesa token 6/390/1.5%/8.8 · retrieve
+zesa token 5/322/1.6%/9.7 · zesa calculator free 12/103/11.7%/3.0.
+Changes (titles only; H1s, descriptions, canonicals untouched):
+- / : "ZESA Calculator Zimbabwe (Free) — Token & Units in ZiG & USD, 2 Oct 2026"
+  (was "... — ZiG (ZWG) & USD to Units, ZETDC Tariffs 2026-10-02").
+- /zesa-tariffs/ : "ZESA Tariffs in ZiG & USD Today — October 2026 ZETDC
+  Table, ZWG 2.27/unit" (contiguous "zesa tariffs in zig" + "today").
+- /retrieve-zesa-token/ : "View or Retrieve a ZESA Token (Free) — Not
+  Received? EcoCash, Banks & ZETDC Portal".
+- /units/ : "How Many ZESA Units Do I Get? ZiG & USD Amounts to kWh (2 Oct
+  2026)" + pageMeta (own OG card).
+- New TARIFF_DAY_LABEL (en-GB "2 Oct 2026") + its own test (new file; no
+  existing test touched).
+Evidence (local): eslint clean; npm test 138/138 (14 files); build, stamp-csp
+41/41; out/ titles as above. Re-measure the same GSC view ~4 weeks after deploy.
