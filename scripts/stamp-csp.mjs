@@ -24,6 +24,28 @@ import { pathToFileURL } from "node:url";
 const OUT = path.resolve(process.argv[2] ?? "out");
 const MARKER = "<!-- Content-Security-Policy (see scripts/stamp-csp.mjs) -->";
 
+// Google AdSense needs a broad allow-list to serve ads: the loader and the
+// scripts it chains in, the ad <iframe>s (safeframe / doubleclick), creative
+// images and measurement beacons. Subdomain wildcards are required because ad
+// creatives come from unpredictable *.googlesyndication.com / *.g.doubleclick.net
+// hosts — but a bare "*" source is still never used. Enabling ads is a
+// deliberate loosening of an otherwise strict policy; see docs/adsense.md.
+const ADSENSE = {
+  script:
+    "https://pagead2.googlesyndication.com https://*.googlesyndication.com " +
+    "https://partner.googleadservices.com https://tpc.googlesyndication.com " +
+    "https://www.googletagservices.com https://adservice.google.com",
+  img:
+    "https://*.googlesyndication.com https://*.g.doubleclick.net " +
+    "https://*.google.com https://*.gstatic.com",
+  connect:
+    "https://pagead2.googlesyndication.com https://*.googlesyndication.com " +
+    "https://*.g.doubleclick.net https://*.google.com",
+  frame:
+    "https://googleads.g.doubleclick.net https://tpc.googlesyndication.com " +
+    "https://*.safeframe.googlesyndication.com",
+};
+
 // Everything the site actually uses, and nothing else.
 const DIRECTIVES = [
   "default-src 'self'",
@@ -34,16 +56,19 @@ const DIRECTIVES = [
   // inline style attributes, so inline styles stay allowed.
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
-  "img-src 'self' data: blob: https://www.google-analytics.com https://www.googletagmanager.com",
+  "img-src 'self' data: blob: https://www.google-analytics.com https://www.googletagmanager.com " +
+    ADSENSE.img,
   "media-src 'self'",
   // voltzw-vend.appwrite.network backs meter checks, orders and payment status,
   // so omitting it here would silently break the vending flow.
   "connect-src 'self' https://voltzw-vend.appwrite.network " +
     "https://www.google-analytics.com https://analytics.google.com " +
-    "https://region1.google-analytics.com https://www.googletagmanager.com",
+    "https://region1.google-analytics.com https://www.googletagmanager.com " +
+    ADSENSE.connect,
   "worker-src 'self' blob:",
   "manifest-src 'self'",
-  "frame-src 'none'",
+  // Ad <iframe>s (AdSense). Was 'none'; see the ADSENSE note above.
+  "frame-src " + ADSENSE.frame,
   "upgrade-insecure-requests",
 ];
 
@@ -69,7 +94,7 @@ export function inlineHashes(html) {
 
 export function policyFor(html) {
   const scriptSrc = [
-    "script-src 'self' https://www.googletagmanager.com",
+    "script-src 'self' https://www.googletagmanager.com " + ADSENSE.script,
     ...inlineHashes(html),
   ].join(" ");
   return [...DIRECTIVES.slice(0, 4), scriptSrc, ...DIRECTIVES.slice(4)].join("; ");

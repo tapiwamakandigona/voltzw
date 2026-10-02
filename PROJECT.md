@@ -30,6 +30,12 @@ versions, before/after advisory evidence and delivered revision.
 - First patched versions come from current advisory/package metadata, never
   invented values. No audit suppressions, forced major upgrades or fake green.
   (2026-09-18)
+- Ads are allowed on VoltZW per owner request (2026-10-02): Google AdSense,
+  tasteful in-content units on informational pages only (never the calculator
+  home, /buy/*, /admin or /login), env-gated and disableable. This required
+  relaxing the strict CSP (frame-src from 'none'; Google ad domains
+  allow-listed) — a deliberate, owner-ratified tradeoff, shipped via PR, not to
+  main directly. (2026-10-02)
 
 ## Constraints
 

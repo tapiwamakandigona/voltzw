@@ -1,4 +1,6 @@
 import { pageMeta } from "@/lib/seo";
+import { Ad } from "@/components/Ad";
+import { AD_SLOTS } from "@/lib/ads";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -169,6 +171,8 @@ export default function RetrievePage() {
             ))}
           </div>
         </div>
+
+        <Ad slot={AD_SLOTS.retrieveInContent} />
 
         <div id="buy-on-voltzw" className="scroll-mt-20 rounded-2xl border border-line bg-ink p-6 text-white sm:p-8">
           <h2 className="font-display text-xl font-bold">Never lose a token again</h2>

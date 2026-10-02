@@ -38,13 +38,16 @@ describe("stamp-csp", () => {
       "base-uri 'self'",
       "form-action 'self'",
       "object-src 'none'",
-      "frame-src 'none'",
       "upgrade-insecure-requests",
     ]) {
       expect(policy).toContain(directive);
     }
-    // A wildcard source would quietly undo the whole policy.
+    // A bare "*" source would quietly undo the whole policy. Scoped subdomain
+    // wildcards (e.g. https://*.googlesyndication.com, needed by AdSense) are
+    // fine and intentionally do not match this guard.
     expect(policy).not.toMatch(/(^|[ ;])\*/);
+    // Nothing is allowed by default; sources are added per directive only.
+    expect(policy).toContain("default-src 'self'");
   });
 
   it("allows exactly the cross-origin endpoints the product needs", () => {
@@ -53,6 +56,11 @@ describe("stamp-csp", () => {
     expect(policy).toContain("https://voltzw-vend.appwrite.network");
     // Consent-gated analytics.
     expect(policy).toContain("https://www.googletagmanager.com");
+    // AdSense: the loader may run and its ad <iframe>s may frame. Enabling ads
+    // intentionally relaxed frame-src from 'none' — see scripts/stamp-csp.mjs.
+    expect(policy).toMatch(/script-src[^;]*pagead2\.googlesyndication\.com/);
+    expect(policy).toMatch(/frame-src[^;]*googlesyndication\.com/);
+    expect(policy).not.toContain("frame-src 'none'");
   });
 
   it("is idempotent: re-stamping does not stack policies", () => {
