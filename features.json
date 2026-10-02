@@ -46,8 +46,8 @@
       "title": "CTR title pass on the four highest-impression pages",
       "acceptance": "Titles for /, /zesa-tariffs/, /retrieve-zesa-token/ and /units/ rewritten from GSC query data (baseline recorded in progress.md) without changing H1s, descriptions' facts or canonicals; ISO dates in titles replaced by a human date; lint, full tests and static build pass; live titles read back. Outcome (CTR change) is measured later and does not gate passes.",
       "verify": "npm run lint && npm test && npm run build; grep <title> in out/ for the four pages; curl live pages after deploy",
-      "passes": false,
-      "evidence": ""
+      "passes": true,
+      "evidence": "VERIFIED 2026-10-02: PR #22 merged (a43c6df); CI + Deploy site green. Local: eslint clean, 138/138 tests, build + stamp-csp 41/41. Live <title>s read back: / 'ZESA Calculator Zimbabwe (Free) \u2014 Token & Units in ZiG & USD, 2 Oct 2026'; /zesa-tariffs/ 'ZESA Tariffs in ZiG & USD Today \u2014 October 2026 ZETDC Table, ZWG 2.27/unit'; /retrieve-zesa-token/ 'View or Retrieve a ZESA Token (Free) \u2014 Not Received? EcoCash, Banks & ZETDC Portal'; /units/ 'How Many ZESA Units Do I Get? ZiG & USD Amounts to kWh (2 Oct 2026)'. CTR outcome re-measure scheduled ~2026-10-30 against the progress.md baseline."
     }
   ]
 }
