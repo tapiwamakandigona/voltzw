@@ -169,3 +169,6 @@ Changes (titles only; H1s, descriptions, canonicals untouched):
   existing test touched).
 Evidence (local): eslint clean; npm test 138/138 (14 files); build, stamp-csp
 41/41; out/ titles as above. Re-measure the same GSC view ~4 weeks after deploy.
+- F6 VERIFIED live (PR #22 a43c6df, CI + deploy green): all four new titles
+  served. F5 stays false until AdSense shows tapiwa.me as Ready; follow-up
+  check scheduled 2026-10-05, CTR re-measure 2026-10-30.
