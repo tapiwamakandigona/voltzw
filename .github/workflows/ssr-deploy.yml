@@ -87,7 +87,12 @@ jobs:
             -F "activate=true")
           dep_id=$(echo "$resp" | python3 -c "import json,sys; print(json.load(sys.stdin)['\$id'])")
           echo "deployment: $dep_id"
-          for i in $(seq 1 30); do
+          # Poll up to 15 min (90 x 10s). Deployments are normally ready in
+          # ~20s, but on 2026-09-24 and 2026-10-01 Appwrite's edge-distribution
+          # step only started 5m38s / 5m29s after the deployment was created;
+          # both went ready ~25-40s after the old 5-min cap, so those runs were
+          # false failures. failed/canceled still exit immediately.
+          for i in $(seq 1 90); do
             sleep 10
             status=$(curl -sS \
               "$APPWRITE_ENDPOINT/sites/zesa-ssr/deployments/$dep_id" \
@@ -100,5 +105,5 @@ jobs:
               failed|canceled) echo "deployment $status" >&2; exit 1 ;;
             esac
           done
-          echo "timed out waiting for deployment" >&2
+          echo "timed out waiting for deployment (15 min, last status: $status)" >&2
           exit 1
