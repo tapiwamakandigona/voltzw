@@ -104,8 +104,9 @@ function Footer() {
             VoltZW is an independent tool and is not affiliated with ZESA Holdings or ZETDC.
             Tariff data is checked against ZERA-approved rates.
           </p>
-          <p className="mt-1">
+          <p className="mt-1 flex flex-wrap gap-x-5">
             <a href="mailto:silentics.org@gmail.com" className="inline-flex min-h-11 items-center underline hover:text-volt">Contact</a>
+            <Link href="/privacy/" className="inline-flex min-h-11 items-center underline hover:text-volt">Privacy policy</Link>
           </p>
         </div>
       </div>

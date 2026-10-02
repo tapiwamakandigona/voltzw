@@ -24,6 +24,22 @@
       "verify": "npm run lint && npm test && npm run build; grep loader+ads.txt+CSP ad domains in out/; dummy-slot build shows <ins> on the three page types and none on home/buy",
       "passes": true,
       "evidence": "VERIFIED 2026-10-02 (branch feat/adsense): lint clean, 137/137 tests incl. 8 stamp-csp, build 49 routes + 40/40 CSP-stamped. out/ has the adsbygoogle loader (client ca-pub-5182383335652302) and ads.txt; CSP frame-src=googleads.g.doubleclick.net+tpc+*.safeframe.googlesyndication.com, script/img/connect carry pagead2 and *.googlesyndication.com / *.g.doubleclick.net. Dummy-slot build: <ins> on units/zwg-500, units/200-units, zesa-tariffs, retrieve-zesa-token; 0 on home and buy. Serving pending AdSense site approval."
+    },
+    {
+      "id": "F4",
+      "title": "Privacy policy with AdSense-required disclosures",
+      "acceptance": "/privacy/ states only what the code does (free tools collect nothing; Buy-flow fields and processors from BuyFlow + functions/vend; opt-in analytics per public/analytics.js; AdSense with Google's required third-party-cookie disclosure, Ads Settings + aboutads opt-outs and the partner-sites link); linked from the global footer; in the sitemap; analytics consent copy no longer says 'Ads ... are off'; lint, full tests and static build pass; live page read back.",
+      "verify": "npm run lint && npm test && npm run build; grep out/privacy/index.html for title/canonical/CSP/disclosure; out/index.html footer link; out/sitemap.xml entry; curl live https://zesa.tapiwa.me/privacy/",
+      "passes": false,
+      "evidence": ""
+    },
+    {
+      "id": "F5",
+      "title": "AdSense site approved and serving-ready",
+      "acceptance": "AdSense for content enabled on pub-5182383335652302; site tapiwa.me (covers zesa.tapiwa.me) added, ownership verified, root ads.txt found, review requested; passes only when the AdSense Sites page shows tapiwa.me as Ready. Approval itself is Google's decision.",
+      "verify": "AdSense Sites page status + ads.txt status; curl https://tapiwa.me/ads.txt and https://zesa.tapiwa.me/ads.txt",
+      "passes": false,
+      "evidence": ""
     }
   ]
 }
