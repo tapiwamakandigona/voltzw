@@ -20,6 +20,9 @@ export const BANDS = tariffs.bands as Band[];
 export const MONTHLY_QUOTA = tariffs.monthlyQuotaKwh;
 // Build-time freshness label, e.g. "July 2026" — derived from the synced tariff data
 export const TARIFF_MONTH_LABEL = new Date(tariffs.effectiveDate + "T00:00:00Z").toLocaleString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
+// Human-readable effective date for page titles, e.g. "2 Oct 2026" — an ISO
+// date in a SERP title reads as machine output and wastes title width.
+export const TARIFF_DAY_LABEL = new Date(tariffs.effectiveDate + "T00:00:00Z").toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
 /** Sane ceiling for user-supplied amounts/units — far beyond any real
  *  purchase. Huge-but-finite values clamp here so they can't distort the

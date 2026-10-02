@@ -16,7 +16,9 @@ const CURRENT_MONTH = TARIFFS.lastVerified.slice(0, 7);
 const CURRENT_MONTH_LABEL = monthLabel(CURRENT_MONTH);
 
 export const metadata: Metadata = pageMeta(
-  `ZESA Tariffs ${CURRENT_MONTH_LABEL} in ZiG & USD — Full ZETDC Table, ZWG ${fmt(BANDS[0].inclLevyZwg, 2)}/unit`,
+  // "zesa tariffs in zig …" (2026 / today / and usd) is this page's biggest
+  // query family; keep that phrase contiguous and lead with it.
+  `ZESA Tariffs in ZiG & USD Today — ${CURRENT_MONTH_LABEL} ZETDC Table, ZWG ${fmt(BANDS[0].inclLevyZwg, 2)}/unit`,
   `Current ZERA-approved ZESA (ZETDC) tariffs for Zimbabwe in ${CURRENT_MONTH_LABEL}, in ZiG (ZWG) and USD: the first 50 units cost ZWG ${fmt(BANDS[0].inclLevyZwg, 4)} incl. the 6% REA levy. Full table of all six stepped bands, verified daily — free PDF download.`,
   "/zesa-tariffs/",
 );

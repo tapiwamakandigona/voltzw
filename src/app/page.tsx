@@ -5,10 +5,14 @@ import Calculator from "@/components/Calculator";
 import BuyPromo from "@/components/BuyPromo";
 import { AMOUNT_PAGES, UNIT_PAGES } from "@/lib/amounts";
 import { FIRST_DATE, HISTORY, totalDriftPct } from "@/lib/history";
-import { TARIFFS, MONTHLY_QUOTA, remainingQuota, zwgToUsd, fmt } from "@/lib/tariff";
+import { TARIFFS, TARIFF_DAY_LABEL, MONTHLY_QUOTA, remainingQuota, zwgToUsd, fmt } from "@/lib/tariff";
 
 export const metadata: Metadata = pageMeta(
-  `ZESA Calculator Zimbabwe — ZiG (ZWG) & USD to Units, ZETDC Tariffs ${TARIFFS.effectiveDate}`,
+  // Leads with the top query ("zesa calculator") and carries the modifiers
+  // that out-click it in GSC: "token calculator" (7.1% CTR), "free" (11.7%),
+  // "units", "in zig". "(Free)" sits on the calculator so it can't read as
+  // "free tokens". Baseline: progress.md 2026-10-02.
+  `ZESA Calculator Zimbabwe (Free) — Token & Units in ZiG & USD, ${TARIFF_DAY_LABEL}`,
   `Free ZESA token calculator for Zimbabwe (ZETDC) in ZiG (ZWG) or US dollars, on the ZERA-approved tariffs effective ${TARIFFS.effectiveDate} — verified daily, not monthly. See exactly how many units (kWh) your money buys: all six stepped bands, the 6% REA levy and your 400 kWh quota.`,
   "/",
 );

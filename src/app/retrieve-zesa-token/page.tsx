@@ -5,7 +5,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = pageMeta(
-  "ZESA Token Not Received? Retrieve or View It — EcoCash, ZB, CBZ & All Banks",
+  // Largest queries are "zesa view token" / "retrieve zesa token" (1.5–2.4%
+  // CTR); "free" and "not received" variants click at 5–9%. Lead with the
+  // verb people type, keep the not-received hook.
+  "View or Retrieve a ZESA Token (Free) — Not Received? EcoCash, Banks & ZETDC Portal",
   "Your token is not lost — it is stored where you bought it. Retrieve or view a ZESA token in minutes: EcoCash (*151#), ZB, CBZ, Steward and other bank apps, the ZETDC self-service portal, WhatsApp and in-person options.",
   "/retrieve-zesa-token/",
 );
