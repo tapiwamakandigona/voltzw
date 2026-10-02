@@ -205,3 +205,16 @@ Owner said "go ahead" to fixing the open Dependabot alerts.
   Production got those tariff updates about 6 min late. Workflows are
   immutable here, so the fix (poll up to 15 min) is PR #26, opened but NOT
   merged, awaiting owner.
+
+## 2026-10-02 (night) — PR #26 ratified and merged
+The owner said "do everything else you recommend", which covers the open
+workflow PR.
+- PR #26 merged 17:06Z as 5b85ef9 (ssr-deploy: poll the Appwrite deployment
+  for up to 90 x 10 s = 15 min, previously 5 min).
+- First run on main, VERIFIED via the Actions API: CI 37038421047 success.
+  Deploy site 37038421385 success, both jobs. In deploy-ssr, "Create +
+  activate deployment" took 22 s (17:06:40 -> 17:07:02), so this deployment
+  ended inside the old window too.
+- Not yet proven: whether the longer window stops the slow-edge false reds.
+  The next tariff-sync run that takes more than 5 min will show it.
+- Dependabot API: voltzw 0 open, portfolio 0 open. Open PRs: none.

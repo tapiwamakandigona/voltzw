@@ -57,8 +57,9 @@ versions, before/after advisory evidence and delivered revision.
   read back live; Dependabot shows 0 open alerts.
 - F5 (AdSense site Ready) is Google's call. tapiwa.me is under review;
   check 2026-10-05.
-- Open: PR #26 (ssr-deploy poll window 5 -> 15 min) awaits owner, because
-  workflows are immutable here. Vend function redeploy is optional (advisory
-  not reachable; manual deploys only).
+- PR #26 (ssr-deploy poll window 5 -> 15 min) was merged 2026-10-02 as
+  5b85ef9 after the owner OK'd it. Its first run was green, so the next
+  tariff-sync run is the real test of the longer window. Vend function
+  redeploy is optional (advisory not reachable; manual deploys only).
 
 Template copied from canonical subagent-toolkit v3.0.1, then adapted.
