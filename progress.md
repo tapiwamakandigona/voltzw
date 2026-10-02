@@ -172,3 +172,36 @@ Evidence (local): eslint clean; npm test 138/138 (14 files); build, stamp-csp
 - F6 VERIFIED live (PR #22 a43c6df, CI + deploy green): all four new titles
   served. F5 stays false until AdSense shows tapiwa.me as Ready; follow-up
   check scheduled 2026-10-05, CTR re-measure 2026-10-30.
+
+
+## 2026-10-02 (evening) — security maintenance delivered; F2 VERIFIED
+Owner said "go ahead" to fixing the open Dependabot alerts.
+- PR #24 (e24e964): functions/vend undici ^6.28.0 -> ^6.28.1
+  (GHSA-3wwx-pv8p-q78v). vend audit 1 -> 0; root tests 138/138; Dependabot
+  #18 fixed. The live vend function was NOT redeployed. Appwrite shows only
+  manual deployments (latest 2026-07-26, no Git link), and the advisory is a
+  WebSocket permessage-deflate DoS. vend and node-appwrite load undici only
+  for Agent/FormData/File/fetch, never WebSocket (grep), so it is not reachable.
+  The fix ships with the next manual deploy.
+- New critical alert #25: next >=16.2.0 <16.3.6 (GHSA-vcvr-r3jv-pc5j, RCE
+  in next/og ImageResponse). next/og and ImageResponse are not imported in
+  src/ or scripts/, and the site is a static export, so it was not reachable.
+  Patched anyway, together with dev-only transitive brace-expansion (#20-#24).
+- PR #25 (34eb425, same tree as the tested 1cee199): next and
+  eslint-config-next 16.3.6; brace-expansion 1.1.21 and 5.0.12.
+  - An npm 10.9.8 install churned the lock (dropped libc fields, added dev
+    flags). Following the 09-18 precedent, the lock was regenerated with
+    npm 11.19.1 (its generator) plus an unforced audit fix.
+  - The lock delta is semantic-only: the next family and two brace-expansion
+    copies. Full evidence is in F2.
+- Estate view (another repo): portfolio PR #47 (0a1e430) moved ssr qs to
+  6.16.0 via express 4.22.3 and body-parser 1.20.8. ssr audit 3 -> 0; SSR
+  tests 22/22; bundle smoke 200 + DENY; deploy green.
+- Fresh Dependabot API (not local audit): voltzw 0 open, portfolio 0 open.
+- tariff-sync red on 09-24 and 10-01 were false failures. Appwrite's
+  build logs (read-only console API) show both deployments ready. Edge
+  distribution started 5m38s and 5m29s after creation, about 25-40s past
+  the workflow's 5-min poll cap; normal deployments take about 20s.
+  Production got those tariff updates about 6 min late. Workflows are
+  immutable here, so the fix (poll up to 15 min) is PR #26, opened but NOT
+  merged, awaiting owner.
