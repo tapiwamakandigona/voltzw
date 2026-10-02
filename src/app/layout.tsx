@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, Inter } from "next/font/google";
 import Link from "next/link";
+import Script from "next/script";
 import "./globals.css";
 import { ORGANIZATION, WEBSITE, jsonLdProps } from "@/lib/seo";
+import { ADSENSE_CLIENT, ADS_ENABLED } from "@/lib/ads";
 
 const display = Space_Grotesk({ variable: "--font-display", subsets: ["latin"] });
 const body = Inter({ variable: "--font-body", subsets: ["latin"] });
@@ -130,6 +132,19 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <main id="main">{children}</main>
         <Footer />
         <script src="/analytics.js" defer />
+        {/* Google AdSense loader — supports both Auto ads (dashboard toggle)
+            and the hand-placed <Ad/> units. Only emitted when a publisher ID
+            is configured (see src/lib/ads.ts). The ad domains it reaches are
+            allow-listed in scripts/stamp-csp.mjs. */}
+        {ADS_ENABLED && (
+          <Script
+            id="adsbygoogle-init"
+            async
+            strategy="afterInteractive"
+            crossOrigin="anonymous"
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
+          />
+        )}
       </body>
     </html>
   );

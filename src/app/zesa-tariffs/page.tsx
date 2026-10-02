@@ -5,6 +5,8 @@ import { UNIT_SLUGS } from "@/lib/amounts";
 import { BulbIcon, WrenchIcon } from "@/components/icons";
 import { FIRST_DATE, HISTORY, monthKeys, monthLabel, monthRange } from "@/lib/history";
 import { breadcrumb, jsonLdProps, pageMeta, tariffDataset } from "@/lib/seo";
+import { Ad } from "@/components/Ad";
+import { AD_SLOTS } from "@/lib/ads";
 
 /** The month this build is describing. People search "zesa tariffs august 2026",
  *  so the month has to be in the title — a page titled only "Today" ranks for
@@ -105,6 +107,8 @@ export default function TariffsPage() {
           using a USD channel. We verify this table against published rates and update it whenever tariffs change.
         </p>
       </section>
+
+      <Ad slot={AD_SLOTS.tariffsInContent} className="container-page" />
 
       <section className="container-page mt-14 grid gap-10 lg:grid-cols-2">
         <div>

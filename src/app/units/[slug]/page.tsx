@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { AMOUNT_PAGES, UNIT_PAGES, findAmountPage, findUnitPage, siblings, unitSiblings } from "@/lib/amounts";
 import { TARIFFS, MONTHLY_QUOTA, RATE, fmt, unitsForAmount, zwgToUsd } from "@/lib/tariff";
 import { WhatItRuns } from "@/components/WhatItRuns";
+import { Ad } from "@/components/Ad";
+import { AD_SLOTS } from "@/lib/ads";
 import { formatDuration, daysOfQuotaUse } from "@/lib/appliances";
 import { monthLabel, priceChangeForUnits } from "@/lib/history";
 import { AMOUNT_COPY } from "@/lib/copy";
@@ -164,6 +166,8 @@ export default async function UnitsPage({ params }: Props) {
       </section>
 
       <WhatItRuns units={totalUnits} label={page.display} />
+
+      <Ad slot={AD_SLOTS.unitsInContent} className="container-page" />
 
       <section className="container-page mt-10">
         <div className="rounded-2xl border border-line bg-card p-6 shadow-sm">

@@ -68,3 +68,44 @@ the existing zesa-ssr package name. Partial PR next; F1 is not complete.
   warning are not suppressed. Build-generated OG restored to tracked source.
 - F1 verified true. F2 remains false until exact checked revision deploys and
   fresh default-branch alerts/live routes are read. Local www301 is not DNS.
+
+
+## 2026-10-02 — AdSense integration + indexing review (new owner mandate)
+Owner authorized a new scope beyond dependency maintenance: add ads "in a neat
+way", review/fix indexing, improve the site. This supersedes the "not a
+redesign" scope for this work only; F1/F2 are untouched.
+
+VERIFIED indexing review (GSC property is `sc-domain:tapiwa.me`, whole estate):
+200 known pages = 126 indexed + 74 not. Drilled every not-indexed reason to
+example URLs. Of the 74, only ~5 are zesa.tapiwa.me and all are benign:
+3 `/api/v1/*` data endpoints (deliberately public via Dataset schema — correct
+not to index), the thin `/zesa-tariffs/2026-07/` archive (already hub-linked;
+needs authority/time), one stale `_next` font-hash 404 and `/login` (already a
+noindex 200 stub). The other ~69 belong to sibling subdomains (zldc, markpath,
+tapride, news, ledgerfarm, fps, zimbet, stubcheck, conn) or are normal Google
+behaviour (redirects, intentional canonicals, markpath's robots-blocked /app,
+noindex). CONCLUSION: zesa itself has no real indexing defect — private pages
+already noindex, API already Dataset-schema'd, month hub already internal-links
+every archive. No zesa SEO code change was warranted; reported instead of
+inventing a fix.
+
+VERIFIED AdSense integration (branch feat/adsense, this PR):
+- Real public publisher id ca-pub-5182383335652302 (from the owner's live
+  AdSense account) in src/lib/ads.ts; env-overridable, disableable with "".
+- Loader via next/script (layout), `<Ad slot/>` component (renders nothing
+  until a slot id is set → no empty boxes, reserves height, "Advertisement"
+  label). public/ads.txt added. Placements: /units/[slug] (both templates),
+  /zesa-tariffs/, /retrieve-zesa-token/ only — NOT the calculator home, /buy/*,
+  /admin or /login.
+- SPEC CHANGE (reported, not silent): scripts/stamp-csp.mjs now allow-lists the
+  Google ad domains and `frame-src` moved from 'none' to the AdSense
+  safeframe/doubleclick origins. stamp-csp.test.ts updated to encode the new
+  intended policy; the bare-`*` and default-src 'self' invariants are kept.
+  This is a real loosening of a deliberately strict CSP — owner ratifies by
+  merging.
+- Evidence: npm run lint clean; npm test 137/137 (incl. 8 stamp-csp); npm run
+  build 49 routes + 40/40 CSP-stamped. Built output: loader + ads.txt present;
+  CSP frame-src/script-src/img-src/connect-src carry the ad domains; dummy-slot
+  build renders `<ins>` on units/tariffs/retrieve and none on home/buy.
+- NOT verified (out of repo scope): ads actually serving. That needs the site
+  approved in AdSense and either Auto ads on or real slot ids set (docs/adsense.md).

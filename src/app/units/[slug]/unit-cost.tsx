@@ -4,6 +4,8 @@ import { AMOUNT_PAGES } from "@/lib/amounts";
 import { TARIFFS, MONTHLY_QUOTA, fmt, costForUnits } from "@/lib/tariff";
 import { APPLIANCES, daysOfQuotaUse, formatDuration, runtimeFor } from "@/lib/appliances";
 import { WhatItRuns } from "@/components/WhatItRuns";
+import { Ad } from "@/components/Ad";
+import { AD_SLOTS } from "@/lib/ads";
 import { monthLabel, priceChangeForUnits } from "@/lib/history";
 import { UNIT_COPY } from "@/lib/copy";
 import { breadcrumb, jsonLdProps } from "@/lib/seo";
@@ -127,6 +129,8 @@ export function UnitCostPage({ page, others }: { page: UnitPage; others: UnitPag
 
 
       <WhatItRuns units={page.units} label={`${page.units} units`} />
+
+      <Ad slot={AD_SLOTS.unitsInContent} className="container-page" />
 
       <section className="container-page mt-10 grid gap-4 sm:grid-cols-2">
         <div className="rounded-2xl border border-line bg-card p-6 shadow-sm">
