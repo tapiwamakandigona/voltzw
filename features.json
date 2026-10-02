@@ -14,8 +14,8 @@
       "title": "Verified website maintenance delivery",
       "acceptance": "Exact tested source merged via checked PR; existing deployment succeeds and correct live route/header/tariff output independently read back; no false claim that local npm audit alone closes default-branch Dependabot.",
       "verify": "Primary PR/ref/CI/deployment readback, fresh Dependabot API and public HTTP/headers/tariff data",
-      "passes": false,
-      "evidence": ""
+      "passes": true,
+      "evidence": "VERIFIED 2026-10-02: exact tested source 1cee199 (next + eslint-config-next 16.3.6, brace-expansion 1.1.21/5.0.12; lock by npm 11.19.1, npm10 ci leaves it byte-identical; lint, 138/138 tests, build 50 pages + stamp-csp 41/41, SSR wrapper 11/11 + exact-bundle smoke) merged via PR #25 as 34eb425 (same tree). PR CI build green (run 37034921559); push CI 37035052550 + Deploy site 37035052959 green (static deploy, and deploy-ssr incl. bundle smoke + Create+activate; Appwrite zesa-ssr deployment 6abfdda2e47d81c8efbf ready/active). Live readback: / 200 with X-Frame-Options DENY, HSTS preload, nosniff, strict-origin-when-cross-origin; live client chunk reports Next \"16.3.6\"; /api/tariffs.json 200 and every field equals main src/data/tariffs.json (effectiveDate 2026-10-02); unknown path real 404; four CTR titles and /privacy/ 200. Fresh Dependabot API (not local audit): voltzw 0 open (fixed #25 critical next, #20-#24 brace-expansion, #18 undici via PR #24); portfolio 0 open (qs #2/#3 via portfolio PR #47)."
     },
     {
       "id": "F3",

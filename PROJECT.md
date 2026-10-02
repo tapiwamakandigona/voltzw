@@ -52,11 +52,13 @@ versions, before/after advisory evidence and delivered revision.
 
 ## Current phase
 
-2026-10-02: monetisation. AdSense code live (PR #20). AdSense for content
-enabled on pub-5182383335652302; site tapiwa.me added + ownership verified;
-review to be requested once the privacy policy (F4) is live. F5 flips only when
-AdSense shows the site as Ready. Earlier dependency-maintenance work (F1/F2) is
-unchanged — F2 still awaits its own delivery readback (record:
-docs/root-dependency-maintenance-2026-09-18.json).
+2026-10-02: monetisation + maintenance.
+- F1-F4 and F6 are VERIFIED. F2 was delivered via PR #25 (next 16.3.6) and
+  read back live; Dependabot shows 0 open alerts.
+- F5 (AdSense site Ready) is Google's call. tapiwa.me is under review;
+  check 2026-10-05.
+- Open: PR #26 (ssr-deploy poll window 5 -> 15 min) awaits owner, because
+  workflows are immutable here. Vend function redeploy is optional (advisory
+  not reachable; manual deploys only).
 
 Template copied from canonical subagent-toolkit v3.0.1, then adapted.
