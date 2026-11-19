@@ -59,21 +59,3 @@ jobs:
           git commit -m "$MSG"
           git push
 
-      - name: Deploy to Appwrite
-        env:
-          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
-        run: |
-          npx --yes appwrite-cli client \
-            --endpoint https://fra.cloud.appwrite.io/v1 \
-            --project-id voltzw \
-            --key "$APPWRITE_API_KEY"
-          npx --yes appwrite-cli sites create-deployment \
-            --site-id voltzw-web --code . --activate true
-
-  # GITHUB_TOKEN pushes never trigger deploy.yml, so the daily sync must ship
-  # the SSR wrapper itself or zesa.tapiwa.me would stop seeing price updates.
-  deploy-ssr:
-    needs: sync
-    uses: ./.github/workflows/ssr-deploy.yml
-    secrets:
-      APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
