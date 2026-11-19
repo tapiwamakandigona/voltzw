@@ -34,6 +34,9 @@ type CheckMeterResp = {
 };
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
+  if (!API) {
+    throw new Error("Service is currently offline.");
+  }
   const res = await fetch(API + path, {
     ...init,
     headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
@@ -121,6 +124,10 @@ export default function BuyFlow() {
   async function checkMeter(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (!API) {
+      setError("Meter verification service is currently offline.");
+      return;
+    }
     setBusy(true);
     try {
       // Raw fetch (not api()) — we need the status code to tell "meter not

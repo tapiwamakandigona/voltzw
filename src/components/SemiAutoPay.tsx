@@ -3,8 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BoltIcon } from "@/components/icons";
 import { saveLastOrderRef } from "@/components/buy-helpers";
-
-const API = "https://voltzw-vend.appwrite.network";
+import { API } from "@/components/payment-mode";
 
 type OrderResp = {
   ok: boolean;
@@ -42,6 +41,9 @@ type Props = {
 const inflightOrders = new Map<string, Promise<OrderResp>>();
 
 function createOrder(body: { meter: string; phone: string; email: string; currency: string; amount: number }): Promise<OrderResp> {
+  if (!API) {
+    return Promise.reject(new Error("Payment backend service is currently offline."));
+  }
   const key = JSON.stringify(body);
   const existing = inflightOrders.get(key);
   if (existing) return existing;
@@ -131,6 +133,7 @@ export default function SemiAutoPay({ meter, phone, email, currency, amount, onB
     let tries = 0;
     async function poll() {
       if (stop) return;
+      if (!API) { setLost(true); return; }
       tries += 1;
       try {
         const res = await fetch(`${API}/order-status?id=${encodeURIComponent(order!.orderId)}`);

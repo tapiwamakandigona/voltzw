@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { BUILD_MODE, canBuy, fetchHealth, normalizeMode, resetHealthCache } from "../payment-mode";
+import { BUILD_MODE, canBuy, fetchHealth, normalizeMode, resetHealthCache, setApiForTest } from "../payment-mode";
 
 describe("normalizeMode", () => {
   it("accepts only the three real modes", () => {
@@ -39,13 +39,17 @@ describe("build-time fallback", () => {
 });
 
 describe("fetchHealth", () => {
-  beforeEach(() => resetHealthCache());
+  beforeEach(() => {
+    resetHealthCache();
+    setApiForTest("https://api.example.com");
+  });
   afterEach(() => {
     vi.unstubAllGlobals();
     resetHealthCache();
+    setApiForTest("");
   });
 
-  it("requests /health once and shares the result", async () => {
+  it("requests /health once and shares the result when API is configured", async () => {
     const json = { configured: true, paymentMode: "semi_auto", feePct: 5 };
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => json });
     vi.stubGlobal("fetch", fetchMock);
@@ -54,6 +58,14 @@ describe("fetchHealth", () => {
     expect(b).toEqual(json);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(String(fetchMock.mock.calls[0][0])).toContain("/health");
+  });
+
+  it("resolves to null immediately when API is unconfigured without calling fetch", async () => {
+    setApiForTest("");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(fetchHealth()).resolves.toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("resolves to null on a network error instead of throwing", async () => {

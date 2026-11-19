@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { BoltIcon } from "@/components/icons";
 import { readLastOrderRef } from "@/components/buy-helpers";
-
-const API = "https://voltzw-vend.appwrite.network";
+import { API } from "@/components/payment-mode";
 
 type StatusResp = {
   ok: boolean;
@@ -55,6 +54,10 @@ export default function TokenStatus() {
 
     async function poll() {
       if (stop) return;
+      if (!API) {
+        setNotFound(true);
+        return;
+      }
       tries.current += 1;
       try {
         const res = await fetch(`${API}/status?ref=${encodeURIComponent(orderRef!)}`);

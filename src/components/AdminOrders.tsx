@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-
-const API = "https://voltzw-vend.appwrite.network";
+import { API } from "@/components/payment-mode";
 // sessionStorage (not localStorage): the admin key survives reloads within
 // the tab but is dropped when the tab closes, shrinking the window a future
 // XSS could exfiltrate it in. Residual risk: any same-tab XSS can still read
@@ -68,6 +67,10 @@ export default function AdminOrders() {
   const [error, setError] = useState("");
 
   const load = useCallback(async (adminKey: string) => {
+    if (!API) {
+      setError("Admin backend API is currently unconfigured.");
+      return;
+    }
     setBusy(true);
     setError("");
     try {

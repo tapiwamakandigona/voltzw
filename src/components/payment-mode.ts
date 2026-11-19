@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from "react";
 
-export const API = "https://voltzw-vend.appwrite.network";
+export let API = process.env.NEXT_PUBLIC_VEND_API ?? "";
+
+/** Test seam: override API base URL for testing or runtime configuration. */
+export function setApiForTest(url: string) {
+  API = url;
+}
 
 /**
  * Payment mode, resolved at RUNTIME from the vend function's /health.
@@ -39,9 +44,13 @@ let cached: Promise<HealthResponse | null> | null = null;
 /** One /health request per page load, shared by every component. */
 export function fetchHealth(): Promise<HealthResponse | null> {
   if (!cached) {
-    cached = fetch(`${API}/health`)
-      .then((r) => (r.ok ? (r.json() as Promise<HealthResponse>) : null))
-      .catch(() => null);
+    if (!API) {
+      cached = Promise.resolve(null);
+    } else {
+      cached = fetch(`${API}/health`)
+        .then((r) => (r.ok ? (r.json() as Promise<HealthResponse>) : null))
+        .catch(() => null);
+    }
   }
   return cached;
 }
